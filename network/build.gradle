@@ -1,0 +1,23 @@
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
+}
+
+group "edu.polyu.blockchain.network"
+version "0.0.1"
+
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':utility')
+    implementation("io.javalin:javalin:5.6.1")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:1.7.3")
+    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+}
+
+kotlin {
+    jvmToolchain(java_target_version)
+}

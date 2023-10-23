@@ -1,0 +1,41 @@
+buildscript {
+    ext {
+        java_target_version = 17
+        kotlin_version = '1.9.10'
+
+        log4j_version = '2.21.0'
+    }
+}
+
+plugins {
+    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
+    id 'application'
+}
+
+group = 'edu.polyu.blockchain'
+version = '0.1.0'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation project(':data')
+    implementation project(':mining')
+    implementation project(':network')
+    implementation project(':utility')
+
+    testImplementation 'org.jetbrains.kotlin:kotlin-test'
+}
+
+test {
+    useJUnitPlatform()
+}
+
+kotlin {
+    jvmToolchain(java_target_version)
+}
+
+application {
+    mainClass = "MainKt"
+}
