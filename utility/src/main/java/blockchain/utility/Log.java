@@ -29,9 +29,7 @@ public class Log {
         builder.add(builder.newLogger("org.apache.logging.log4j", Level.DEBUG)
                 .add(builder.newAppenderRef("Stdout")).addAttribute("additivity", false));
         builder.add(builder.newRootLogger(Level.ERROR).add(builder.newAppenderRef("Stdout")));
-        try (LoggerContext ignored = Configurator.initialize(builder.build())) {
-            // NOOP
-        }
+        LoggerContext ignored = Configurator.initialize(builder.build());
     }
 
     private final org.apache.logging.log4j.Logger logger;
