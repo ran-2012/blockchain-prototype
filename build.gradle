@@ -2,6 +2,7 @@ buildscript {
     ext {
         java_target_version = 17
         kotlin_version = '1.9.10'
+        kotlin_coroutine_version = '1.7.3'
 
         log4j_version = '2.21.0'
     }

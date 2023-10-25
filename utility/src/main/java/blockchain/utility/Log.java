@@ -22,7 +22,7 @@ public class Log {
                 builder.newAppender("Stdout", "CONSOLE")
                         .addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
         appenderBuilder.add(builder.newLayout("PatternLayout")
-                .addAttribute("pattern", "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] [%-1level]: %msg%n%throwable"));
+                .addAttribute("pattern", "%d{yyyy-MM-dd HH:mm:ss.SSS} [%-1level] [%t]: %msg%n%throwable"));
         appenderBuilder.add(builder.newFilter("MarkerFilter", Filter.Result.DENY, Filter.Result.NEUTRAL)
                 .addAttribute("marker", "FLOW"));
         builder.add(appenderBuilder);
