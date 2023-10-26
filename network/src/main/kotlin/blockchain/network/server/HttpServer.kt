@@ -11,7 +11,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 
 class HttpServer {
 
-    private val log = Log.get(this);
+    private val log = Log.get(this)
 
     init {
     }
