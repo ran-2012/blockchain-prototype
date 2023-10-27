@@ -23,6 +23,7 @@ repositories {
 dependencies {
     implementation project(':data')
     implementation project(':mining')
+    implementation project(':storage')
     implementation project(':network')
     implementation project(':utility')
 

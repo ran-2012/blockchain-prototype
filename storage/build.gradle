@@ -10,6 +10,9 @@ repositories {
 }
 
 dependencies {
+    implementation project(":data")
+    implementation project(":utility")
+
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlin_coroutine_version")
     implementation("org.mongodb:mongodb-driver-kotlin-coroutine:4.10.1")
