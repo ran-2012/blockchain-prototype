@@ -1,29 +1,29 @@
-package package blockchain.data.core;
+package blockchain.data.core;
 
-import com.company.exceptions.*;
+import blockchain.data.exceptions.*;
 
 import java.util.Date;
 
 public class Block {
 
     // 区块编号
-    private int block_index;
+    private int blockIndex;
     // 区块数据
-    private Transaction[] block_data;
+    private Transaction[] blockData;
     // 区块时间戳
-    private Date block_timestamp;
+    private Date blockTimestamp;
     // 前一区块哈希
-    private String block_prev_hash;
+    private String blockPrevHash;
     // 区块哈希
-    private String block_hash;
+    private String blockHash;
     // 挖矿难度
-    private int block_difficulty;
+    private int blockDifficulty;
     // 随机数
-    private int block_nonce;
+    private int blockNonce;
     // Merkel Tree 根
-    private String block_merkle_root;
+    private String blockMerkleRoot;
     // 是否已经完成挖矿
-    private boolean block_mined;
+    private boolean blockMined;
 
     /**
      * 构造函数，构造一个已经完成挖矿的区块。完成挖矿的区块不允许添加新的 transaction
@@ -54,33 +54,19 @@ public class Block {
     }
 
     /**
-     * 构造函数，从 json 对象构造一个区块，应当是完成挖矿的区块。
-     * @param jsonObject JSON对象
-     * @throws TXEmptyException 传入的 transaction 为空时抛出
-     * @throws TXNotEvenException 传入的 transaction 数量不是偶数时抛出
-     * @throws MerkleTreeInvalidException 区块内的 transaction 与 merkle tree root 不符时抛出
-     * @throws BlockInvalidException 区块哈希不符时抛出
-     * @throws JSONInvalidException 传入的 json 不符合要求时抛出
-     */
-    public Block(Object jsonObject)
-            throws TXNotEvenException, MerkleTreeInvalidException, BlockInvalidException, TXEmptyException, JSONInvalidException {
-        ;
-    }
-
-    /**
      * 获取区块编号
      * @return 区块编号
      */
-    public int getBlock_index() {
-        return block_index;
+    public int getBlockIndex() {
+        return blockIndex;
     }
 
     /**
      * 获取所有 transaction
      * @return transaction 数组
      */
-    public Transaction[] getBlock_data() {
-        return block_data;
+    public Transaction[] getBlockData() {
+        return blockData;
     }
 
     /**
@@ -97,16 +83,16 @@ public class Block {
      * 获取区块时间戳
      * @return 时间戳
      */
-    public Date getBlock_timestamp() {
-        return block_timestamp;
+    public Date getBlockTimestamp() {
+        return blockTimestamp;
     }
 
     /**
      * 获取前一区块哈希
      * @return 前一区块哈希
      */
-    public String getBlock_prev_hash() {
-        return block_prev_hash;
+    public String getBlockPrevHash() {
+        return blockPrevHash;
     }
 
     /**
@@ -114,8 +100,8 @@ public class Block {
      * @return 此区块哈希
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public String getBlock_hash() throws NotMinedException {
-        return block_hash;
+    public String getBlockHash() throws NotMinedException {
+        return blockHash;
     }
 
     /**
@@ -123,8 +109,8 @@ public class Block {
      * @return 此区块哈希
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public String getBlock_merkle_root() throws NotMinedException {
-        return block_merkle_root;
+    public String getBlockMerkleRoot() throws NotMinedException {
+        return blockMerkleRoot;
     }
 
     /**
@@ -132,8 +118,8 @@ public class Block {
      * @return 难度
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public int getBlock_difficulty() throws NotMinedException {
-        return block_difficulty;
+    public int getBlockDifficulty() throws NotMinedException {
+        return blockDifficulty;
     }
 
     /**
@@ -141,8 +127,8 @@ public class Block {
      * @return 随机值
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public int getBlock_nonce() throws NotMinedException {
-        return block_nonce;
+    public int getBlockNonce() throws NotMinedException {
+        return blockNonce;
     }
 
     /**
@@ -161,17 +147,8 @@ public class Block {
      * 此区块是否已完成挖矿
      * @return 是否已完成挖矿
      */
-    public boolean isBlock_mined() {
-        return block_mined;
-    }
-
-    /**
-     * 将区块序列化为 JSON。不包含是否已挖矿字段。
-     * @return JSON 对象
-     * @throws NotMinedException 区块未挖矿时抛出
-     */
-    public Object block2JSON() throws NotMinedException {
-        return null;
+    public boolean isBlockMined() {
+        return blockMined;
     }
 
     /**

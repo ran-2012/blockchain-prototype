@@ -1,4 +1,4 @@
-package package blockchain.data.core;
+package blockchain.data.core;
 
 public class Transaction {
 }
