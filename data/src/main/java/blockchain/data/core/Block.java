@@ -6,28 +6,26 @@ import java.util.Date;
 
 public class Block {
 
-    // 区块编号
-    private int blockIndex;
+    // 区块高度
+    private long height;
     // 区块数据
-    private Transaction[] blockData;
+    private Transaction[] data;
     // 区块时间戳
-    private Date blockTimestamp;
+    private Date timestamp;
     // 前一区块哈希
-    private String blockPrevHash;
-    // 区块哈希
-    private String blockHash;
+    private String prevHash;
+    // 区块哈希（64个字符的hex字符串）
+    private String hash;
     // 挖矿难度
-    private int blockDifficulty;
+    private int difficulty;
     // 随机数
-    private int blockNonce;
+    private long nonce;
     // Merkel Tree 根
-    private String blockMerkleRoot;
-    // 是否已经完成挖矿
-    private boolean blockMined;
+    private String merkleRoot;
 
     /**
      * 构造函数，构造一个已经完成挖矿的区块。完成挖矿的区块不允许添加新的 transaction
-     * @param index 区块编号
+     * @param height 区块编号
      * @param data 区块数据（Transaction）
      * @param timestamp 区块时间戳
      * @param prevHash 上一区块哈希
@@ -37,19 +35,19 @@ public class Block {
      * @throws TXNotEvenException 传入的 transaction 数量不是偶数时抛出
      * @throws NonceInvalidException 传入的 nonce 不满足难度要求时抛出
      */
-    public Block(int index, Transaction[] data, Date timestamp, String prevHash, int difficulty, int nonce)
+    public Block(int height, Transaction[] data, Date timestamp, String prevHash, int difficulty, int nonce)
             throws TXNotEvenException, NonceInvalidException, TXEmptyException {
         ;
     }
 
     /**
      * 构造函数，构造一个尚未完成挖矿的区块。未完成挖矿的区块可以在之后添加 transaction
-     * @param index 区块编号
+     * @param height 区块编号
      * @param data 区块数据（Transaction）
      * @param timestamp 区块时间戳
      * @param prevHash 前一区块哈希
      */
-    public Block(int index, Transaction[] data, Date timestamp, String prevHash) {
+    public Block(int height, Transaction[] data, Date timestamp, String prevHash) {
         ;
     }
 
@@ -57,16 +55,16 @@ public class Block {
      * 获取区块编号
      * @return 区块编号
      */
-    public int getBlockIndex() {
-        return blockIndex;
+    public long getHeight() {
+        return height;
     }
 
     /**
      * 获取所有 transaction
      * @return transaction 数组
      */
-    public Transaction[] getBlockData() {
-        return blockData;
+    public Transaction[] getData() {
+        return data;
     }
 
     /**
@@ -83,16 +81,16 @@ public class Block {
      * 获取区块时间戳
      * @return 时间戳
      */
-    public Date getBlockTimestamp() {
-        return blockTimestamp;
+    public Date getTimestamp() {
+        return timestamp;
     }
 
     /**
      * 获取前一区块哈希
      * @return 前一区块哈希
      */
-    public String getBlockPrevHash() {
-        return blockPrevHash;
+    public String getPrevHash() {
+        return prevHash;
     }
 
     /**
@@ -100,8 +98,8 @@ public class Block {
      * @return 此区块哈希
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public String getBlockHash() throws NotMinedException {
-        return blockHash;
+    public String getHash() throws NotMinedException {
+        return hash;
     }
 
     /**
@@ -109,8 +107,8 @@ public class Block {
      * @return 此区块哈希
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public String getBlockMerkleRoot() throws NotMinedException {
-        return blockMerkleRoot;
+    public String getMerkleRoot() throws NotMinedException {
+        return merkleRoot;
     }
 
     /**
@@ -118,8 +116,8 @@ public class Block {
      * @return 难度
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public int getBlockDifficulty() throws NotMinedException {
-        return blockDifficulty;
+    public int getDifficulty() throws NotMinedException {
+        return difficulty;
     }
 
     /**
@@ -127,8 +125,26 @@ public class Block {
      * @return 随机值
      * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public int getBlockNonce() throws NotMinedException {
-        return blockNonce;
+    public long getNonce() throws NotMinedException {
+        return nonce;
+    }
+
+    /**
+     * 设置 nonce
+     * @throws AlreadyMinedException 已经完成挖矿时抛出
+     */
+    public void setNonce() throws AlreadyMinedException {
+        ;
+    }
+
+    /**
+     * 更新区块 merkle tree root 值
+     * @return 更新后的 merkle tree root 值
+     * @throws TXEmptyException 区块内 TX 为空时抛出
+     * @throws TXNotEvenException 区块内 TX 数量不为偶数时抛出
+     */
+    public String updateMerkleRoot() throws TXEmptyException, TXNotEvenException {
+        return "";
     }
 
     /**
@@ -141,14 +157,6 @@ public class Block {
      */
     public boolean mineBlock(int nonce) throws AlreadyMinedException, TXNotEvenException, TXEmptyException {
         return false;
-    }
-
-    /**
-     * 此区块是否已完成挖矿
-     * @return 是否已完成挖矿
-     */
-    public boolean isBlockMined() {
-        return blockMined;
     }
 
     /**
