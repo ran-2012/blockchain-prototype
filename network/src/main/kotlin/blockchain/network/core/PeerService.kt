@@ -1,6 +1,5 @@
 package blockchain.network.core
 
-import blockchain.storage.Block
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query

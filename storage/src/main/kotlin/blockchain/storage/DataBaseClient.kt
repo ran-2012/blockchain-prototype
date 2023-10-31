@@ -1,12 +1,12 @@
 package blockchain.storage
 
+import blockchain.data.core.Block
 import blockchain.data.core.Transaction
 import com.mongodb.ConnectionString
 import com.mongodb.client.model.Indexes
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoCollection
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
-import kotlinx.coroutines.*
 
 class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
 
@@ -15,6 +15,10 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
         const val DB_BLOCK = "block"
         const val DB_TRANSACTION = "transaction"
         const val DB_UTXO = "unspent_transaction"
+
+        const val FIELD_HEIGHT = "height"
+        const val FIELD_HASH = "hash"
+        const val FIELD_SOURCE_ADDRESS = "sourceAddress"
     }
 
     private val connectionString = ConnectionString(dbUri)
@@ -40,14 +44,26 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
     }
 
     suspend fun initSchema() {
-        blockCollection.createIndex(Indexes.ascending("height"))
-        blockCollection.createIndex(Indexes.text("hash"))
+        blockCollection.createIndex(Indexes.ascending(FIELD_HEIGHT))
+        blockCollection.createIndex(Indexes.text(FIELD_HASH))
 
-        transactionCollection.createIndex(Indexes.text("hash"))
-        transactionCollection.createIndex(Indexes.text("sourceHash"))
+        transactionCollection.createIndex(Indexes.text(FIELD_HASH))
+        transactionCollection.createIndex(Indexes.text(FIELD_SOURCE_ADDRESS))
     }
 
     fun get(): MongoClient {
         return client
+    }
+
+    fun block(): MongoCollection<Block> {
+        return blockCollection
+    }
+
+    fun transaction(): MongoCollection<Transaction> {
+        return transactionCollection
+    }
+
+    fun utxo(): MongoCollection<Transaction> {
+        return utxoCollection
     }
 }

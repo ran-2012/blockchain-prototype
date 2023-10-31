@@ -1,7 +1,7 @@
 package blockchain.network
 
+import blockchain.data.core.Block
 import blockchain.network.client.HttpClient
-import blockchain.storage.Block
 import java.util.concurrent.ConcurrentHashMap
 
 class Broadcaster {

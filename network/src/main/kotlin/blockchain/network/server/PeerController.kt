@@ -1,7 +1,7 @@
 package blockchain.network.server
 
+import blockchain.data.core.Block
 import blockchain.network.core.PeerService
-import blockchain.storage.Block
 
 class PeerController : PeerService {
     override suspend fun newBlock(Block: Block) {
