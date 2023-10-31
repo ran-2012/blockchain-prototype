@@ -1,10 +1,10 @@
 package blockchain.data.wallet;
 
-import blockchain.data.core.TransactionData;
+import blockchain.data.core.Transaction;
 
 public class TransactionRequestData {
 
     public String publicKey;
 
-    public TransactionData transaction;
+    public Transaction transaction;
 }

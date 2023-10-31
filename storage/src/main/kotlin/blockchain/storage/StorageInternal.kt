@@ -1,34 +1,48 @@
 package blockchain.storage
 
-import blockchain.data.core.BlockData
-import blockchain.data.core.TransactionData
+import blockchain.data.core.Transaction
+import kotlinx.coroutines.runBlocking
 
-class StorageInternal: IStorage{
-    override fun addBlockSync(data: BlockData?) {
+class StorageInternal(dbName: String) : IStorage {
+
+    private val client: DataBaseClient;
+
+    init {
+        client = DataBaseClient(dbName)
+        runBlocking {
+            client.initCollection()
+            client.initSchema()
+        }
+    }
+
+    override fun addBlockSync(data: Block?) {
+        runBlocking {
+
+        }
         TODO("Not yet implemented")
     }
 
-    override fun removeBlockSync(blockId: String?) {
+    override fun removeBlockSync(height: String?) {
         TODO("Not yet implemented")
     }
 
-    override fun removeBlockRangeSync(min: Long?, max: Long?) {
+    override fun removeBlockRangeSync(heightMin: Long?, heightMax: Long?) {
         TODO("Not yet implemented")
     }
 
-    override fun getBlockAllSync(): MutableMap<Long, MutableList<BlockData>> {
+    override fun getBlockAllSync(): MutableMap<Long, MutableList<Block>> {
         TODO("Not yet implemented")
     }
 
-    override fun getBlockRangeSync(min: Long?, max: Long?): MutableMap<Long, MutableList<BlockData>> {
+    override fun getBlockRangeSync(heightMin: Long?, heightMax: Long?): MutableMap<Long, MutableList<Block>> {
         TODO("Not yet implemented")
     }
 
-    override fun getBlockSync(): MutableList<BlockData> {
+    override fun getBlockSync(): MutableList<Block> {
         TODO("Not yet implemented")
     }
 
-    override fun addTransactionSync(data: TransactionData?) {
+    override fun addTransactionSync(data: Transaction?) {
         TODO("Not yet implemented")
     }
 
@@ -36,7 +50,7 @@ class StorageInternal: IStorage{
         TODO("Not yet implemented")
     }
 
-    override fun getTransactionSync(pubKey: String?): MutableList<TransactionData> {
+    override fun getTransactionSync(pubKey: String?): MutableList<Transaction> {
         TODO("Not yet implemented")
     }
 

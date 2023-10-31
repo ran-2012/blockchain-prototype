@@ -1,7 +1,6 @@
 package blockchain.storage;
 
-import blockchain.data.core.BlockData;
-import blockchain.data.core.TransactionData;
+import blockchain.data.core.Transaction;
 
 import java.util.List;
 import java.util.Map;
@@ -9,37 +8,37 @@ import java.util.Map;
 public class Storage implements IStorage {
 
     @Override
-    public void addBlockSync(BlockData data) {
+    public void addBlockSync(Block data) {
 
     }
 
     @Override
-    public void removeBlockSync(String blockId) {
+    public void removeBlockSync(String height) {
 
     }
 
     @Override
-    public void removeBlockRangeSync(Long min, Long max) {
+    public void removeBlockRangeSync(Long heightMin, Long heightMax) {
 
     }
 
     @Override
-    public Map<Long, List<BlockData>> getBlockAllSync() {
+    public Map<Long, List<Block>> getBlockAllSync() {
         return null;
     }
 
     @Override
-    public Map<Long, List<BlockData>> getBlockRangeSync(Long min, Long max) {
+    public Map<Long, List<Block>> getBlockRangeSync(Long heightMin, Long heightMax) {
         return null;
     }
 
     @Override
-    public List<BlockData> getBlockSync() {
+    public List<Block> getBlockSync() {
         return null;
     }
 
     @Override
-    public void addTransactionSync(TransactionData data) {
+    public void addTransactionSync(Transaction data) {
 
     }
 
@@ -49,7 +48,7 @@ public class Storage implements IStorage {
     }
 
     @Override
-    public List<TransactionData> getTransactionSync(String pubKey) {
+    public List<Transaction> getTransactionSync(String pubKey) {
         return null;
     }
 }

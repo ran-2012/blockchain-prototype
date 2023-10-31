@@ -1,7 +1,7 @@
 package blockchain.network
 
-import blockchain.data.core.BlockData
 import blockchain.network.client.HttpClient
+import blockchain.storage.Block
 import java.util.concurrent.ConcurrentHashMap
 
 class Broadcaster {
@@ -20,7 +20,7 @@ class Broadcaster {
         return HashSet(peerMap.keys)
     }
 
-    suspend fun newBlock(block: BlockData) {
+    suspend fun newBlock(block: Block) {
         for (key in getKeySet()) {
             peerMap[key]?.peerService?.newBlock(block)
         }
@@ -37,13 +37,13 @@ class Broadcaster {
         return map
     }
 
-    suspend fun getBlockById(blockId: Long): Map<String, List<BlockData>> {
+    suspend fun getBlockById(blockId: Long): Map<String, List<Block>> {
         return aggregateData {
             it?.peerService?.getBlockWithId(blockId)
         }
     }
 
-    suspend fun getBlockRange(min: Long, max: Long): Map<String, Map<Long, List<BlockData>>> {
+    suspend fun getBlockRange(min: Long, max: Long): Map<String, Map<Long, List<Block>>> {
         return aggregateData {
             it?.peerService?.getBlockRange(min, max)
         }

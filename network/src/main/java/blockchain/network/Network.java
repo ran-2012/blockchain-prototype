@@ -1,21 +1,26 @@
 package blockchain.network;
 
-import blockchain.data.core.BlockData;
+import blockchain.data.core.Block;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Network {
 
 
     public static class Callback {
-        void onNewBlockReceived(BlockData data) {
+        void onNewBlockReceived(Block data) {
 
         }
 
-        void onBlockWithIdRequested(Long blockId) {
-
+        List<Block> onBlockWithHeightRequested(Long height) {
+            return new ArrayList<>();
         }
 
-        void onBLockRangeRequested(Long min, Long max) {
-
+        Map<Long, List<Block>> onBLockRangeRequested(Long heightMin, Long heightMax) {
+            return new HashMap<>();
         }
 
         void onPeerJoined(String nodeId) {

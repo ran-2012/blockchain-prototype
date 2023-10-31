@@ -1,29 +1,28 @@
 package blockchain.storage;
 
-import blockchain.data.core.BlockData;
-import blockchain.data.core.TransactionData;
+import blockchain.data.core.Transaction;
 
 import java.util.List;
 import java.util.Map;
 
 public interface IStorage {
 
-    void addBlockSync(BlockData data);
+    void addBlockSync(Block data);
 
-    void removeBlockSync(String blockId);
+    void removeBlockSync(String height);
 
-    void removeBlockRangeSync(Long min, Long max);
+    void removeBlockRangeSync(Long heightMin, Long heightMax);
 
-    Map<Long, List<BlockData>> getBlockAllSync();
+    Map<Long, List<Block>> getBlockAllSync();
 
-    Map<Long, List<BlockData>> getBlockRangeSync(Long min, Long max);
+    Map<Long, List<Block>> getBlockRangeSync(Long heightMin, Long heightMax);
 
-    List<BlockData> getBlockSync();
+    List<Block> getBlockSync();
 
-    void addTransactionSync(TransactionData data);
+    void addTransactionSync(Transaction data);
 
     void removeTransactionSync(String transactionId);
 
-    List<TransactionData> getTransactionSync(String pubKey);
+    List<Transaction> getTransactionSync(String pubKey);
 
 }
