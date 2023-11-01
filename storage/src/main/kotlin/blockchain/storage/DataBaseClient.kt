@@ -3,10 +3,15 @@ package blockchain.storage
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
 import com.mongodb.ConnectionString
+import com.mongodb.MongoClientSettings
 import com.mongodb.client.model.Indexes
 import com.mongodb.kotlin.client.coroutine.MongoClient
 import com.mongodb.kotlin.client.coroutine.MongoCollection
 import com.mongodb.kotlin.client.coroutine.MongoDatabase
+import org.bson.codecs.configuration.CodecRegistries
+import org.bson.codecs.configuration.CodecRegistry
+import org.bson.codecs.pojo.PojoCodecProvider
+
 
 class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
 
@@ -22,7 +27,21 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
     }
 
     private val connectionString = ConnectionString(dbUri)
-    private val client = MongoClient.create(connectionString)
+    private val client: MongoClient
+
+    init {
+        val pojoCodecRegistry = CodecRegistries.fromProviders(PojoCodecProvider.builder().automatic(true).build())
+        val codecRegistry: CodecRegistry = CodecRegistries.fromRegistries(
+            MongoClientSettings.getDefaultCodecRegistry(),
+            pojoCodecRegistry
+        )
+        val clientSettings = MongoClientSettings.builder()
+            .applyConnectionString(connectionString)
+            .codecRegistry(codecRegistry)
+            .build()
+        client = MongoClient.create(clientSettings)
+    }
+
     private val database: MongoDatabase
 
     private lateinit var blockCollection: MongoCollection<Block>
@@ -44,11 +63,18 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
     }
 
     suspend fun initSchema() {
+//        val blockIndexes = ArrayList<Document>()
+//        blockCollection.listIndexes().toCollection(blockIndexes)
+
         blockCollection.createIndex(Indexes.ascending(FIELD_HEIGHT))
         blockCollection.createIndex(Indexes.text(FIELD_HASH))
 
-        transactionCollection.createIndex(Indexes.text(FIELD_HASH))
-        transactionCollection.createIndex(Indexes.text(FIELD_SOURCE_ADDRESS))
+        transactionCollection.createIndex(
+            Indexes.compoundIndex(
+                Indexes.text(FIELD_SOURCE_ADDRESS),
+                Indexes.text(FIELD_HASH)
+            )
+        )
     }
 
     fun get(): MongoClient {

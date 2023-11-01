@@ -5,7 +5,9 @@ import blockchain.data.core.Transaction
 import com.mongodb.client.model.Filters
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
+import org.bson.Document
 import org.bson.conversions.Bson
+import org.jetbrains.annotations.TestOnly
 
 class StorageInternal(dbName: String) : IStorage {
 
@@ -42,6 +44,17 @@ class StorageInternal(dbName: String) : IStorage {
 
     private fun getHashFilter(hash: String): Bson {
         return Filters.eq(DataBaseClient.FIELD_HASH, hash)
+    }
+
+    @TestOnly
+    fun cleanUp() {
+        runBlocking {
+            client.block().deleteMany(Document())
+            val keys = redisClient.getClient().keys(redisClient.dataBaseName + "*")
+            for (key in keys) {
+                redisClient.remove(key)
+            }
+        }
     }
 
     override fun addBlockSync(data: Block) {

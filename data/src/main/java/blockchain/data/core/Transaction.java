@@ -11,4 +11,14 @@ public class Transaction {
      * Address of transaction initiator
      */
     public String sourceAddress;
+
+    public Transaction() {
+        this.hash = "";
+        this.sourceAddress = "";
+    }
+
+    public Transaction(String hash, String sourceAddress) {
+        this.hash = hash;
+        this.sourceAddress = sourceAddress;
+    }
 }

@@ -2,18 +2,19 @@ package blockchain.storage
 
 import blockchain.data.core.Transaction
 import com.google.gson.Gson
+import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.Jedis
 
-class RedisClient(private val dataBaseName: String, private val port: Int = DEFAULT_PORT) {
+class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT) {
 
     companion object {
-        const val DEFAULT_PORT = 6479
+        const val DEFAULT_PORT = 6379
 
         const val PREFIX_UTXO = "utxo"
         const val PREFIX_ADDRESS = "address"
     }
 
-    private val jedis = Jedis("localhost", port)
+    private val jedis = Jedis("127.0.0.1", port)
     private val gson = Gson()
 
     init {
@@ -26,6 +27,11 @@ class RedisClient(private val dataBaseName: String, private val port: Int = DEFA
 
     private fun addPrefix(prefix: String, key: String): String {
         return "$dataBaseName:$prefix:$key"
+    }
+
+    @TestOnly
+    public fun getClient(): Jedis {
+        return jedis
     }
 
     fun get(): Jedis {
@@ -41,7 +47,7 @@ class RedisClient(private val dataBaseName: String, private val port: Int = DEFA
     }
 
     fun remove(key: String) {
-        jedis.del(key)
+        jedis.del(addPrefix(key))
     }
 
     fun setAdd(key: String, value: String) {
@@ -53,7 +59,7 @@ class RedisClient(private val dataBaseName: String, private val port: Int = DEFA
     }
 
     fun setRemove(key: String, value: String) {
-        jedis.srem(key, value)
+        jedis.srem(addPrefix(key), value)
     }
 
     fun addUtxo(address: String, transaction: Transaction) {

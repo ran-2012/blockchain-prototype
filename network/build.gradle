@@ -22,7 +22,9 @@ dependencies {
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlin_coroutine_version")
+
     testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
 }
 
 kotlin {
