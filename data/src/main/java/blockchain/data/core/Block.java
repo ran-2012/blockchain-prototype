@@ -1,15 +1,21 @@
 package blockchain.data.core;
 
 import blockchain.data.exceptions.*;
+import blockchain.utility.Hash;
+import blockchain.utility.Log;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.Map;
 
 public class Block {
 
     // 区块高度
     private long height;
     // 区块数据
-    private Transaction[] data;
+    private ArrayList<Transaction> data;
     // 区块时间戳
     private long timestamp;
     // 前一区块哈希
@@ -23,9 +29,12 @@ public class Block {
     // Merkel Tree 根
     private String merkleRoot;
 
+    /**
+     * 空构造函数
+     */
     public Block() {
         height = 0;
-        data = new Transaction[0];
+        data = new ArrayList<Transaction>();
         timestamp = new Date().getTime();
         prevHash = "";
         hash = "";
@@ -46,7 +55,7 @@ public class Block {
      * @throws TXNotEvenException 传入的 transaction 数量不是偶数时抛出
      * @throws NonceInvalidException 传入的 nonce 不满足难度要求时抛出
      */
-    public Block(int height, Transaction[] data, long timestamp, String prevHash, int difficulty, int nonce)
+    public Block(int height, ArrayList<Transaction> data, long timestamp, String prevHash, int difficulty, int nonce)
             throws TXNotEvenException, NonceInvalidException, TXEmptyException {
         this.height = height;
         this.data = data;
@@ -54,7 +63,7 @@ public class Block {
         this.prevHash = prevHash;
         this.difficulty = difficulty;
         this.nonce = nonce;
-        if (this.data.length == 0) {
+        if (this.data.size() == 0) {
             throw new TXEmptyException();
         }
         updateMerkleRoot();
@@ -68,7 +77,7 @@ public class Block {
      * @param timestamp 区块时间戳
      * @param prevHash 前一区块哈希
      */
-    public Block(int height, Transaction[] data, long timestamp, String prevHash) {
+    public Block(int height, ArrayList<Transaction> data, long timestamp, String prevHash) {
         this.height = height;
         this.data = data;
         this.timestamp = timestamp;
@@ -99,7 +108,7 @@ public class Block {
      * 获取所有 transaction
      * @return transaction 数组
      */
-    public Transaction[] getData() {
+    public ArrayList<Transaction> getData() {
         return data;
     }
 
@@ -107,7 +116,7 @@ public class Block {
      * 设置区块内的交易列表
      * @param data 交易列表
      */
-    public void setData(Transaction[] data) {
+    public void setData(ArrayList<Transaction> data) {
         this.data = data;
     }
 
@@ -118,7 +127,12 @@ public class Block {
      * @throws AlreadyMinedException 区块已完成挖矿时抛出
      */
     public boolean addTransaction(Transaction tx) throws AlreadyMinedException {
-        return false;
+        if (hash.isBlank() || hash.isEmpty()) {
+            data.add(tx);
+            return true;
+        } else {
+            throw new AlreadyMinedException();
+        }
     }
 
     /**
@@ -156,9 +170,8 @@ public class Block {
     /**
      * 获取此区块哈希。若未完成挖矿则抛出异常
      * @return 此区块哈希
-     * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public String getHash() throws NotMinedException {
+    public String getHash() {
         return hash;
     }
 
@@ -173,9 +186,8 @@ public class Block {
     /**
      * 获取此区块 merkle tree root。若未完成挖矿则抛出异常
      * @return 此区块哈希
-     * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public String getMerkleRoot() throws NotMinedException {
+    public String getMerkleRoot() {
         return merkleRoot;
     }
 
@@ -192,9 +204,8 @@ public class Block {
     /**
      * 获取区块难度。若未完成挖矿则抛出异常
      * @return 难度
-     * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public int getDifficulty() throws NotMinedException {
+    public int getDifficulty() {
         return difficulty;
     }
 
@@ -209,9 +220,8 @@ public class Block {
     /**
      * 获取区块随机值。若未完成挖矿则抛出异常
      * @return 随机值
-     * @throws NotMinedException 区块未完成挖矿时抛出
      */
-    public long getNonce() throws NotMinedException {
+    public long getNonce() {
         return nonce;
     }
 
@@ -221,8 +231,12 @@ public class Block {
      * 设置随机值
      * @throws AlreadyMinedException 已经完成挖矿时抛出
      */
-    public void setNonce() throws AlreadyMinedException {
-        ;
+    public void setNonce(long nonce) throws AlreadyMinedException {
+        if (hash.isBlank() || hash.isEmpty()) {
+            this.nonce = nonce;
+        } else {
+            throw new AlreadyMinedException();
+        }
     }
 
     /**
@@ -240,8 +254,26 @@ public class Block {
      * @return 更新后的哈希
      * @throws NonceInvalidException nonce 不合法时抛出
      */
-    public String updateBlockHash() throws NonceInvalidException {
-        return "";
+    public String updateBlockHash() throws NonceInvalidException, TXNotEvenException, TXEmptyException {
+        if (merkleRoot.isEmpty() || merkleRoot.isBlank()) {
+            updateMerkleRoot();
+        }
+        String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
+                String.valueOf(difficulty) + String.valueOf(nonce) + merkleRoot;
+        Map<String, Object> hashResult;
+        try {
+            hashResult = Hash.hashAndCount0(headerStr);
+        } catch (NoSuchAlgorithmException e) {
+            Log log = Log.get(this);
+            log.error("Cannot find instance SHA-256");
+            return "";
+        }
+        if ((int)(hashResult.get("NumOfZero")) >= difficulty) {
+            this.hash = hashResult.get("Hash").toString();
+            return this.hash;
+        } else {
+            throw new NonceInvalidException();
+        }
     }
 
     /**
