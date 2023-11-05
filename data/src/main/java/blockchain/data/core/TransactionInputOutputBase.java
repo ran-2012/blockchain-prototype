@@ -12,10 +12,19 @@ class TransactionInputOutputBase {
         this.signature = signature;
     }
 
+    @Override
+    public String toString(){
+        return "address=".concat(address).concat(",value=").concat(Long.toString(value)).
+                concat(",signature=").concat(signature);  // todo signature should not be included for hash?
+    }
+
+    public String contentString(){
+        return "address=".concat(address).concat(",value=").concat(Long.toString(value));  // without signature
+    }
+
     public String getAddress() {
         return address;
     }
-
 
     public long getValue() {
         return value;
