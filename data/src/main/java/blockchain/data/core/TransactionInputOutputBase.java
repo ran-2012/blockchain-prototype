@@ -1,12 +1,12 @@
 package blockchain.data.core;
 
-public class TransactionItem {
+class TransactionInputOutputBase {
 
     String address;
     long value;
     String signature;
 
-    public TransactionItem(String address, int value, String signature) {
+    public TransactionInputOutputBase(String address, int value, String signature) {
         this.address = address;
         this.value = value;
         this.signature = signature;

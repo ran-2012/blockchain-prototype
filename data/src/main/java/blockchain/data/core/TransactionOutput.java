@@ -1,6 +1,6 @@
 package blockchain.data.core;
 
-public class TransactionOutput extends TransactionItem{
+public class TransactionOutput extends TransactionInputOutputBase{
 
     boolean coinbase = false;
 
