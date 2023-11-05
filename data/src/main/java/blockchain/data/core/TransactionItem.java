@@ -3,7 +3,7 @@ package blockchain.data.core;
 public class TransactionItem {
 
     String address;
-    int value;
+    long value;
     String signature;
 
     public TransactionItem(String address, int value, String signature) {
@@ -17,7 +17,7 @@ public class TransactionItem {
     }
 
 
-    public int getValue() {
+    public long getValue() {
         return value;
     }
 
