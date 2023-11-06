@@ -18,6 +18,7 @@
 - 6.0.16
 - https://redis.io/docs/getting-started/installation/install-redis-on-windows
 - 注：官方不支持Windows，可以安装在WSL下，或使用社区的Windows build版本。
+
 ## 说明
 
 - 使用Java 17
@@ -36,6 +37,7 @@
 - 所有字段必须能够通过构造函数初始化
 - 所有字段需要有相应的getter和setter
 - 需要有无参构造函数
+- 使用列表时需要用`ArrayList`
 
 否则在进行数据库存储时会非常麻烦
 

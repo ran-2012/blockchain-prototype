@@ -232,11 +232,7 @@ public class Block {
      * @throws AlreadyMinedException 已经完成挖矿时抛出
      */
     public void setNonce(long nonce) throws AlreadyMinedException {
-        if (hash.isBlank() || hash.isEmpty()) {
             this.nonce = nonce;
-        } else {
-            throw new AlreadyMinedException();
-        }
     }
 
     /**

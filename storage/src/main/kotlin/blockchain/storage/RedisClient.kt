@@ -1,6 +1,6 @@
 package blockchain.storage
 
-import blockchain.data.core.Transaction
+import blockchain.data.core.Utxo
 import com.google.gson.Gson
 import org.jetbrains.annotations.TestOnly
 import redis.clients.jedis.Jedis
@@ -62,25 +62,63 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
         jedis.srem(addPrefix(key), value)
     }
 
-    fun addUtxo(address: String, transaction: Transaction) {
-        val hash = transaction.hash
-        val transactionStr = gson.toJson(transaction)
+    fun addUtxo(utxo: Utxo) {
+        val address = utxo.address
+        val hash = utxo.signature
+        val transactionStr = gson.toJson(utxo)
         jedis.set(addPrefix(PREFIX_UTXO, hash), transactionStr)
         jedis.sadd(addPrefix(PREFIX_ADDRESS, address), hash)
         jedis.sadd(addPrefix(PREFIX_ADDRESS, "ALL"), address)
     }
 
-    fun removeUtxo(address: String, transaction: Transaction) {
-        val hash = transaction.hash
+    fun removeUtxo(utxo: Utxo) {
+        val address = utxo.address
+        val hash = utxo.signature
         jedis.del(addPrefix(PREFIX_UTXO, hash))
         jedis.srem(addPrefix(PREFIX_ADDRESS, address), hash)
     }
 
-    fun getUtxo(address: String): Set<String> {
-        return jedis.smembers(addPrefix(PREFIX_ADDRESS, address)) ?: HashSet()
+    fun getUtxoByHash(hash: String): Utxo? {
+        val utxoStr = jedis.get(addPrefix(PREFIX_UTXO, hash))
+        return if (utxoStr.isEmpty()) {
+            null
+        } else {
+            gson.fromJson(utxoStr, Utxo::class.java)
+        }
     }
 
-    fun getAddress(): Set<String> {
+    fun getUtxo(address: String): Set<Utxo> {
+        val set = jedis.smembers(addPrefix(PREFIX_ADDRESS, address)) ?: HashSet()
+        val result = HashSet<Utxo>()
+        for (hash in set) {
+            val utxo = gson.fromJson(jedis.get(addPrefix(PREFIX_UTXO, hash)), Utxo::class.java)
+            result.add(utxo)
+        }
+        return result
+    }
+
+    fun getAddressAll(): Set<String> {
         return jedis.smembers(addPrefix(PREFIX_ADDRESS, "ALL")) ?: HashSet()
+    }
+
+    fun getUtxoAll(): Set<Utxo> {
+        val keys = jedis.keys(addPrefix(PREFIX_UTXO, "*"))
+        val result = HashSet<Utxo>()
+        for (key in keys) {
+            val utxoStr = jedis.get(key)
+            if (utxoStr.isNotEmpty()) {
+                val utxo = gson.fromJson(utxoStr, Utxo::class.java)
+                result.add(utxo)
+            }
+        }
+        return result
+    }
+
+    @TestOnly
+    fun cleanUp() {
+        val keys = jedis.keys("$dataBaseName*")
+        for (key in keys) {
+            remove(key)
+        }
     }
 }

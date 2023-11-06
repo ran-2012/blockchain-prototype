@@ -2,6 +2,8 @@ package blockchain.storage;
 
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
+import blockchain.data.core.Utxo;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Map;
@@ -9,29 +11,48 @@ import java.util.Set;
 
 public interface IStorage {
 
-    void addBlockSync(Block data);
+    void addBlock(Block data);
 
-    void removeBlockSync(long height);
+    void removeBlockByHeight(long height);
 
-    void removeBlockRangeSync(Long heightMin, Long heightMax);
+    void removeBlockByHash(String hash);
 
-    Map<Long, List<Block>> getBlockAllSync();
+    void removeBlockByHashRange(List<String> hashes);
 
-    Map<Long, List<Block>> getBlockRangeSync(Long heightMin, Long heightMax);
+    void removeBlockByHeightRange(Long heightMin, Long heightMax);
 
-    Block getBlockSync(String hash);
+    /**
+     * Get all blocks.
+     *
+     * @return Map of height->block
+     */
+    Map<Long, List<Block>> getBlockAll();
 
-    void addTransactionSync(Transaction data);
+    /**
+     * Get blocks by height.
+     *
+     * @param heightMin Height min
+     * @param heightMax Height max
+     * @return Map of height->block
+     */
+    Map<Long, List<Block>> getBlockRange(Long heightMin, Long heightMax);
 
-    void removeTransactionSync(String hash);
+    @Nullable
+    Block getBlock(String hash);
 
-    List<Transaction> getTransactionSync(String sourceAddress);
+    void addTransaction(Transaction data);
 
-    void addUtxoSync(String address, Transaction data);
+    void removeTransaction(String hash);
 
-    void removeUtxoSync(String address, Transaction data);
+    List<Transaction> getTransaction(String sourceAddress);
 
-    Set<String> getUtxoListSync(String address);
+    void addUtxo(Utxo data);
 
-    Set<String> getAddress();
+    void removeUtxo(Utxo data);
+
+    Set<Utxo> getUtxoByAddress(String address);
+
+    Set<String> getAddressAll();
+
+    Set<Utxo> getUtxoAll();
 }

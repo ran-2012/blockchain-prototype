@@ -2,12 +2,14 @@ package blockchain.storage
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
+import blockchain.data.core.Utxo
 import com.mongodb.client.model.Filters
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.jetbrains.annotations.TestOnly
+import java.lang.Exception
 
 class StorageInternal(dbName: String) : IStorage {
 
@@ -50,32 +52,41 @@ class StorageInternal(dbName: String) : IStorage {
     fun cleanUp() {
         runBlocking {
             client.block().deleteMany(Document())
-            val keys = redisClient.getClient().keys(redisClient.dataBaseName + "*")
-            for (key in keys) {
-                redisClient.remove(key)
-            }
+            redisClient.cleanUp()
         }
     }
 
-    override fun addBlockSync(data: Block) {
+    override fun addBlock(data: Block) {
         runBlocking {
             client.block().insertOne(data)
         }
     }
 
-    override fun removeBlockSync(height: Long) {
+    override fun removeBlockByHeight(height: Long) {
         runBlocking {
             client.block().deleteMany(Filters.eq(DataBaseClient.FIELD_HEIGHT, height))
         }
     }
 
-    override fun removeBlockRangeSync(heightMin: Long, heightMax: Long) {
+    override fun removeBlockByHash(hash: String) {
+        runBlocking {
+            client.block().deleteOne(Filters.eq(DataBaseClient.FIELD_HASH, hash))
+        }
+    }
+
+    override fun removeBlockByHashRange(hashes: List<String>) {
+        runBlocking {
+            client.block().deleteMany(Filters.`in`(DataBaseClient.FIELD_HASH, hashes))
+        }
+    }
+
+    override fun removeBlockByHeightRange(heightMin: Long, heightMax: Long) {
         runBlocking {
             client.block().deleteMany(getRangeFilter(heightMin, heightMax))
         }
     }
 
-    override fun getBlockAllSync(): Map<Long, List<Block>> {
+    override fun getBlockAll(): Map<Long, List<Block>> {
         val map = HashMap<Long, ArrayList<Block>>()
         runBlocking {
             client.block().find().collect { block ->
@@ -85,7 +96,7 @@ class StorageInternal(dbName: String) : IStorage {
         return map
     }
 
-    override fun getBlockRangeSync(heightMin: Long, heightMax: Long): Map<Long, List<Block>> {
+    override fun getBlockRange(heightMin: Long, heightMax: Long): Map<Long, List<Block>> {
         val map = HashMap<Long, ArrayList<Block>>()
         runBlocking {
             client.block().find(getRangeFilter(heightMin, heightMax)).collect {
@@ -95,25 +106,29 @@ class StorageInternal(dbName: String) : IStorage {
         return map
     }
 
-    override fun getBlockSync(hash: String): Block {
+    override fun getBlock(hash: String): Block? {
         return runBlocking {
-            client.block().find(getHashFilter(hash)).single()
+            try {
+                client.block().find(getHashFilter(hash)).single()
+            } catch (ignored: Exception) {
+                null
+            }
         }
     }
 
-    override fun addTransactionSync(data: Transaction) {
+    override fun addTransaction(data: Transaction) {
         runBlocking {
             client.transaction().insertOne(data)
         }
     }
 
-    override fun removeTransactionSync(hash: String) {
+    override fun removeTransaction(hash: String) {
         runBlocking {
             client.transaction().deleteMany(getHashFilter(hash))
         }
     }
 
-    override fun getTransactionSync(sourceAddress: String): MutableList<Transaction> {
+    override fun getTransaction(sourceAddress: String): MutableList<Transaction> {
         val list = ArrayList<Transaction>()
         runBlocking {
             client.transaction().find(Filters.eq(DataBaseClient.FIELD_SOURCE_ADDRESS, sourceAddress)).collect {
@@ -123,19 +138,23 @@ class StorageInternal(dbName: String) : IStorage {
         return list
     }
 
-    override fun addUtxoSync(address: String, data: Transaction) {
-        redisClient.addUtxo(address, data)
+    override fun addUtxo(data: Utxo) {
+        redisClient.addUtxo(data)
     }
 
-    override fun removeUtxoSync(address: String, data: Transaction) {
-        redisClient.removeUtxo(address, data)
+    override fun removeUtxo(data: Utxo) {
+        redisClient.removeUtxo(data)
     }
 
-    override fun getUtxoListSync(address: String): Set<String> {
+    override fun getUtxoByAddress(address: String): Set<Utxo> {
         return redisClient.getUtxo(address)
     }
 
-    override fun getAddress(): Set<String> {
-        return redisClient.getAddress()
+    override fun getAddressAll(): Set<String> {
+        return redisClient.getAddressAll()
+    }
+
+    override fun getUtxoAll(): Set<Utxo> {
+        return redisClient.getUtxoAll()
     }
 }
