@@ -7,20 +7,23 @@ import retrofit2.http.Query
 
 interface PeerService {
     @POST(BLOCKS)
-    suspend fun newBlock(Block: Block)
+    suspend fun newBlock(block: Block)
 
-    @GET(GET_BLOCK_WITH_ID)
-    suspend fun getBlockWithId(id: Long): List<Block>
+    @GET(BLOCKS_WITH_HASH)
+    suspend fun getBlockWithHash(hash: String): Block?
 
     @GET(BLOCKS)
-    suspend fun getBlockRange(@Query("min") min: Long, @Query("max") max: Long): Map<Long, List<Block>>
+    suspend fun getBlockRange(@Query(PARAM_MIN) min: Long, @Query(PARAM_MAX) max: Long): Map<Long, List<Block>>
 
     @GET(HEARTBEAT)
     suspend fun heartbeat()
 
     companion object {
         const val BLOCKS = "blocks"
-        const val GET_BLOCK_WITH_ID = "block/{id}"
+        const val BLOCKS_WITH_HASH = "blocks/{hash}"
         const val HEARTBEAT = "heartbeat"
+
+        const val PARAM_MIN = "min"
+        const val PARAM_MAX = "max"
     }
 }

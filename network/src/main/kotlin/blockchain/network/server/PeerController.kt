@@ -1,23 +1,52 @@
 package blockchain.network.server
 
 import blockchain.data.core.Block
+import blockchain.network.Network
 import blockchain.network.core.PeerService
+import blockchain.storage.Storage
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import java.lang.Exception
 
-class PeerController : PeerService {
-    override suspend fun newBlock(Block: Block) {
-        TODO("Not yet implemented")
+class PeerController(coroutineContext: CoroutineScope, callback: Network.Callback) :
+    BaseController(coroutineContext, callback), PeerService {
+    override suspend fun newBlock(block: Block) {
+        scope.launch {
+            try {
+                callback.onNewBlockReceived(block)
+            } catch (e: Exception) {
+                log.warn("Failed to process new block")
+                e.printStackTrace()
+            }
+        }
     }
 
-    override suspend fun getBlockWithId(id: Long): List<Block> {
-        TODO("Not yet implemented")
+    override suspend fun getBlockWithHash(hash: String): Block? {
+        val block = scope.async {
+            try {
+                Storage.getInstance().getBlock(hash)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                null
+            }
+        }
+        return block.await()
     }
 
     override suspend fun getBlockRange(min: Long, max: Long): Map<Long, List<Block>> {
-        TODO("Not yet implemented")
+        val result = scope.async {
+            try {
+                Storage.getInstance().getBlockRange(min, max)
+            } catch (e: Exception) {
+                e.printStackTrace()
+                HashMap()
+            }
+        }
+        return result.await()
     }
 
     override suspend fun heartbeat() {
-        TODO("Not yet implemented")
     }
 
 }

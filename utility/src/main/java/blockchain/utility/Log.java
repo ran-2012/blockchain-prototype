@@ -62,6 +62,10 @@ public class Log {
         logger.warn(message, params);
     }
 
+    public void error(String message) {
+        logger.error(message);
+    }
+
     public void error(Object message) {
         logger.error(message);
     }

@@ -1,6 +1,7 @@
 package blockchain.network;
 
 import blockchain.data.core.Block;
+import blockchain.data.core.Transaction;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -10,24 +11,44 @@ import java.util.Map;
 public class Network {
 
 
+    public void registerCallback(Callback callback) {
+
+    }
+
+    public void unregisterCallback(Callback callback) {
+
+    }
+
     public static class Callback {
-        void onNewBlockReceived(Block data) {
+        public void onNewBlockReceived(Block data) {
 
         }
 
-        List<Block> onBlockWithHeightRequested(Long height) {
+        public Block onBlockWithHashRequested(String hash) {
+            return null;
+        }
+
+        public List<Block> onBlockWithHeightRequested(Long height) {
             return new ArrayList<>();
         }
 
-        Map<Long, List<Block>> onBLockRangeRequested(Long heightMin, Long heightMax) {
+        public Map<Long, List<Block>> onBLockRangeRequested(Long heightMin, Long heightMax) {
             return new HashMap<>();
         }
 
-        void onPeerJoined(String nodeId) {
+        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, Long value) {
+            return null;
+        }
+
+        public void onSignedTransactionReceived(Transaction transaction) {
 
         }
 
-        void onPeerLost(String nodeId) {
+        public void onPeerJoined(String nodeId) {
+
+        }
+
+        public void onPeerLost(String nodeId) {
 
         }
     }

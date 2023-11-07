@@ -1,46 +1,136 @@
 package blockchain.network.server
 
-import blockchain.network.client.EmptyService
-import blockchain.network.SampleData
+import blockchain.data.core.Block
+import blockchain.data.core.Transaction
+import blockchain.network.Network.Callback
+import blockchain.network.core.PeerService
+import blockchain.network.core.WalletService
 import blockchain.utility.Log
-import com.google.gson.Gson
 import io.javalin.Javalin
 import io.javalin.json.JavalinGson
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
+import kotlinx.coroutines.*
+import org.eclipse.jetty.server.Server
+import org.eclipse.jetty.util.thread.QueuedThreadPool
+import java.util.concurrent.*
+import kotlin.coroutines.resume
+import kotlin.coroutines.resumeWithException
+import kotlin.coroutines.suspendCoroutine
 
-class HttpServer {
+class HttpServer(
+    private val port: Int,
+    private val threadLimit: Int = 10,
+    private val callback: Callback = Callback()
+) {
 
     private val log = Log.get(this)
 
-    init {
+    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+        exception.printStackTrace()
     }
 
-    fun start() {
-        log.info("Start server")
-        val app = Javalin
+    /**
+     * Run callback on single thread to ensure thread safety.
+     */
+    private val coroutineContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher() + exceptionHandler
+    private val scope = CoroutineScope(coroutineContext)
+
+    private val peerController = PeerController(scope, callback)
+    private val walletController = WalletController(scope, callback)
+
+    companion object {
+    }
+
+    /**
+     * Suspend till server is started.
+     */
+    suspend fun start() = suspendCoroutine {
+        log.info("Starting server")
+        Javalin
+            //===========================================//
+            // Configuration
             .create { config ->
                 config.requestLogger.http { ctx, ms ->
                     log.debug("Request received, url: {}", ctx.url())
                 }
                 config.jsonMapper(JavalinGson())
+                config.jetty.server {
+                    Server(QueuedThreadPool(threadLimit))
+                }
             }
             .events { event ->
                 event.serverStarted {
-                    log.info("Server started")
-                    val retrofit = Retrofit.Builder()
-                        .baseUrl("http://localhost:7070")
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build()
-                    val emptyService = retrofit.create(EmptyService::class.java)
-                    val gson = Gson();
-                    log.info(gson.toJson(emptyService.hello().execute().body()))
+                    it.resume(Unit)
+                }
+                event.serverStartFailed {
+                    it.resumeWithException(RuntimeException("Failed to start server"))
                 }
             }
-            .get("/") { ctx ->
-                ctx.json(SampleData())
+            //===========================================//
+            // Peer interfaces
+            .post(PeerService.BLOCKS) { ctx ->
+                runBlocking {
+                    peerController.newBlock(ctx.bodyAsClass(Block::class.java))
+                }
             }
-            .start(7070)
-
+            .get(PeerService.BLOCKS_WITH_HASH) { ctx ->
+                runBlocking {
+                    val block = peerController.getBlockWithHash(ctx.pathParam("hash"))
+                    if (block == null) {
+                        ctx.status(404);
+                    } else {
+                        ctx.json(block)
+                    }
+                }
+            }
+            .get(PeerService.BLOCKS) { ctx ->
+                runBlocking {
+                    ctx.json(
+                        peerController.getBlockRange(
+                            ctx.pathParam(PeerService.PARAM_MIN).toLong(),
+                            ctx.pathParam(PeerService.PARAM_MAX).toLong()
+                        )
+                    )
+                }
+            }
+            //===========================================//
+            // Wallet interfaces
+            .get(WalletService.TRANSACTION) { ctx ->
+                val sourceAddress = ctx.queryParam(WalletService.PARAM_SOURCE_ADDRESS)!!
+                val targetAddress = ctx.queryParam(WalletService.PARAM_TARGET_ADDRESS)!!
+                val value = ctx.queryParam(WalletService.PARAM_VALUE)!!.toLong()
+                runBlocking {
+                    val transaction = walletController.getTransaction(sourceAddress, targetAddress, value)
+                    if (transaction == null) {
+                        log.warn(
+                            "Failed to generate transaction for address {}, to {}, value {}",
+                            sourceAddress,
+                            targetAddress,
+                            value
+                        )
+                        ctx.status(400)
+                    } else {
+                        ctx.json(transaction)
+                    }
+                }
+            }
+            .post(WalletService.TRANSACTION) { ctx ->
+                runBlocking {
+                    walletController.newTransaction(ctx.bodyAsClass(Transaction::class.java))
+                }
+            }
+            .get(WalletService.UTXO) { ctx ->
+                val address = ctx.queryParam(WalletService.PARAM_ADDRESS)!!
+                ctx.json(runBlocking { walletController.getUtxo(address) })
+            }
+            //===========================================//
+            // Miscellaneous interfaces
+            .get(PeerService.HEARTBEAT) { ctx ->
+                ctx.status(200)
+            }
+            .get("/exception") {
+                throw RuntimeException("test exception")
+            }
+            //===========================================//
+            .start(port)
     }
 }
