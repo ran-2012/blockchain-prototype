@@ -36,13 +36,7 @@ public class PowService {
         // 封装交易数据集合
         ArrayList<Transaction> txList = new ArrayList<Transaction>();
         Transaction tx1 = new Transaction();
-        tsa1.setId("1");
-        tsa1.setBusinessInfo("这是IP为："+CommonUtil.getLocalIp()+"，端口号为："+blockCache.getP2pport()+"的节点挖矿生成的区块");
-        tsaList.add(tsa1);
-        Transaction tsa2 = new Transaction();
-        tsa2.setId("2");
-        tsa2.setBusinessInfo("区块链高度为："+(blockCache.getLatestBlock().getIndex()+1));
-        tsaList.add(tsa2);
+
 
         // 定义每次哈希函数的结果
         String newBlockHash = "";
