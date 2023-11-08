@@ -2,7 +2,7 @@ package blockchain.network.server
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
-import blockchain.network.Network.Callback
+import blockchain.network.INetwork.Callback
 import blockchain.network.core.PeerService
 import blockchain.network.core.WalletService
 import blockchain.utility.Log
@@ -12,32 +12,40 @@ import kotlinx.coroutines.*
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.util.thread.QueuedThreadPool
 import java.util.concurrent.*
+import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
 
-class HttpServer(
+class HttpServer @JvmOverloads constructor(
     private val port: Int,
     private val threadLimit: Int = 10,
-    private val callback: Callback = Callback()
+    private var callback: Callback = Callback()
 ) {
 
-    private val log = Log.get(this)
+    private val log: Log = Log.get(this)
 
-    private val exceptionHandler = CoroutineExceptionHandler { _, exception ->
+    private val exceptionHandler: CoroutineExceptionHandler = CoroutineExceptionHandler { _, exception ->
         exception.printStackTrace()
     }
 
     /**
      * Run callback on single thread to ensure thread safety.
      */
-    private val coroutineContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher() + exceptionHandler
-    private val scope = CoroutineScope(coroutineContext)
+    private val coroutineContext: CoroutineContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher() + exceptionHandler
+    private val scope: CoroutineScope = CoroutineScope(coroutineContext)
 
-    private val peerController = PeerController(scope, callback)
-    private val walletController = WalletController(scope, callback)
+    private val peerController: PeerController = PeerController(scope, callback)
+    private val walletController: WalletController = WalletController(scope, callback)
 
     companion object {
+    }
+
+    fun setCallback(callback: Callback) {
+        this.callback = callback
+
+        peerController.callback = callback
+        walletController.callback = callback
     }
 
     /**
@@ -133,4 +141,5 @@ class HttpServer(
             //===========================================//
             .start(port)
     }
+
 }

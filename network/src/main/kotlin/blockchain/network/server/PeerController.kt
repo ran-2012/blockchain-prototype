@@ -1,7 +1,7 @@
 package blockchain.network.server
 
 import blockchain.data.core.Block
-import blockchain.network.Network
+import blockchain.network.INetwork
 import blockchain.network.core.PeerService
 import blockchain.storage.Storage
 import kotlinx.coroutines.CoroutineScope
@@ -9,7 +9,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import java.lang.Exception
 
-class PeerController(coroutineContext: CoroutineScope, callback: Network.Callback) :
+class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callback) :
     BaseController(coroutineContext, callback), PeerService {
     override suspend fun newBlock(block: Block) {
         scope.launch {

@@ -2,13 +2,13 @@ package blockchain.network.server
 
 import blockchain.data.core.Transaction
 import blockchain.data.core.Utxo
-import blockchain.network.Network
+import blockchain.network.INetwork
 import blockchain.network.core.WalletService
 import blockchain.storage.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 
-class WalletController(coroutineContext: CoroutineScope, callback: Network.Callback) :
+class WalletController(coroutineContext: CoroutineScope, callback: INetwork.Callback) :
     BaseController(coroutineContext, callback),
     WalletService {
 
