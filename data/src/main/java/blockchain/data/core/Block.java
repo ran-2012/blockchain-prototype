@@ -6,9 +6,7 @@ import blockchain.utility.Log;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Map;
+import java.util.*;
 
 public class Block {
 
@@ -56,7 +54,7 @@ public class Block {
      * @throws NonceInvalidException 传入的 nonce 不满足难度要求时抛出
      */
     public Block(int height, ArrayList<Transaction> data, long timestamp, String prevHash, int difficulty, int nonce)
-            throws TXNotEvenException, NonceInvalidException, TXEmptyException {
+            throws TXNotEvenException, NonceInvalidException, TXEmptyException, NoSuchAlgorithmException {
         this.height = height;
         this.data = data;
         this.timestamp = timestamp;
@@ -127,7 +125,7 @@ public class Block {
      * @throws AlreadyMinedException 区块已完成挖矿时抛出
      */
     public boolean addTransaction(Transaction tx) throws AlreadyMinedException {
-        if (hash.isBlank() || hash.isEmpty()) {
+        if (hash.isEmpty()) {
             data.add(tx);
             return true;
         } else {
@@ -239,10 +237,38 @@ public class Block {
      * 更新区块 merkle tree root 值
      * @return 更新后的 merkle tree root 值
      * @throws TXEmptyException 区块内 TX 为空时抛出
-     * @throws TXNotEvenException 区块内 TX 数量不为偶数时抛出
      */
-    public String updateMerkleRoot() throws TXEmptyException, TXNotEvenException {
-        return "";
+    public String updateMerkleRoot() throws TXEmptyException {
+        if (data.size() == 0) {
+            throw new TXEmptyException();
+        }
+        ArrayList<Transaction> txs = (ArrayList<Transaction>) data.clone();
+        int pow = 0;
+        while (Math.pow(2, pow) < txs.size()) {
+            pow += 1;
+        }
+        for (int i = 0; i < (Math.pow(2, pow) - txs.size()); i++) {
+            txs.add(new Transaction());
+        }
+        String[] merkleTree = new String[2 * data.size() - 1];
+        for (int i = 0; i < data.size(); i++) {
+            merkleTree[i + data.size() - 1] = data.get(i).getHash();
+        }
+        while (pow > 0) {
+            int startIndex = (int)Math.pow(2, pow) - 1;
+            int dataNum = startIndex + 1;
+            for (int i = startIndex; i < startIndex + dataNum - 1; i += 2) {
+                try {
+                    merkleTree[(i - 1) / 2] = Hash.hash(merkleTree[i] + merkleTree[i + 1]);
+                } catch (Exception ex) {
+                    merkleTree[(i - 1) / 2] = "";
+                }
+
+            }
+            pow--;
+        }
+        merkleRoot = merkleTree[0];
+        return merkleTree[0];
     }
 
     /**
@@ -250,8 +276,8 @@ public class Block {
      * @return 更新后的哈希
      * @throws NonceInvalidException nonce 不合法时抛出
      */
-    public String updateBlockHash() throws NonceInvalidException, TXNotEvenException, TXEmptyException {
-        if (merkleRoot.isEmpty() || merkleRoot.isBlank()) {
+    public String updateBlockHash() throws NonceInvalidException, TXEmptyException {
+        if (merkleRoot.isEmpty()) {
             updateMerkleRoot();
         }
         String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
@@ -281,19 +307,61 @@ public class Block {
      * @throws TXEmptyException 传入的 transaction 为空时抛出
      */
     public boolean mineBlock(int nonce) throws AlreadyMinedException, TXNotEvenException, TXEmptyException {
-        return false;
+        updateMerkleRoot();
+        String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
+                String.valueOf(difficulty) + String.valueOf(nonce) + merkleRoot;
+        Map<String, Object> hashResult;
+        try {
+            hashResult = Hash.hashAndCount0(headerStr);
+        } catch (NoSuchAlgorithmException e) {
+            Log log = Log.get(this);
+            log.error("Cannot find instance SHA-256");
+            return false;
+        }
+        if ((int)(hashResult.get("NumOfZero")) >= difficulty) {
+            this.hash = hashResult.get("Hash").toString();
+            this.nonce = nonce;
+            return true;
+        } else {
+            return false;
+        }
     }
 
     /**
      * 验证区块 merkel tree 以及哈希
      * @return 区块哈希以及 merkel tree root 是否正确
      * @throws NotMinedException 区块尚未挖矿时抛出
-     * @throws TXNotEvenException 区块内 transaction 数量不为偶数时抛出
      * @throws MerkleTreeInvalidException 区块内 transaction 与 merkel tree root 不符时抛出
      * @throws BlockInvalidException 区块哈希不符时抛出
+     * @throws NonceInvalidException 区块哈希不符难度时抛出
      */
     public boolean validate()
-            throws NotMinedException, TXNotEvenException, MerkleTreeInvalidException, BlockInvalidException {
-        return false;
+            throws NotMinedException, MerkleTreeInvalidException, BlockInvalidException, TXEmptyException, NonceInvalidException {
+        if (this.hash.isEmpty()) {
+            throw new NotMinedException();
+        }
+        String oldMerkleRoot = this.merkleRoot;
+        updateMerkleRoot();
+        if (!Objects.equals(oldMerkleRoot, this.merkleRoot)) {
+            this.merkleRoot = oldMerkleRoot;
+            throw new MerkleTreeInvalidException();
+        }
+        String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
+                String.valueOf(difficulty) + String.valueOf(nonce) + merkleRoot;
+        Map<String, Object> hashResult;
+        try {
+            hashResult = Hash.hashAndCount0(headerStr);
+        } catch (NoSuchAlgorithmException e) {
+            Log log = Log.get(this);
+            log.error("Cannot find instance SHA-256");
+            return false;
+        }
+        if ((int)(hashResult.get("NumOfZero")) < difficulty) {
+            throw new NonceInvalidException();
+        }
+        if (!Objects.equals(hash, hashResult.get("Hash").toString())) {
+            throw new BlockInvalidException();
+        }
+        return true;
     }
 }
