@@ -1,6 +1,7 @@
 package blockchain.network.client
 
 import blockchain.network.core.PeerService
+import blockchain.network.core.WalletService
 import blockchain.utility.Log
 import com.google.gson.Gson
 import okhttp3.ConnectionPool
@@ -27,6 +28,7 @@ class HttpClient(baseUrl: String) {
         .build()
 
     val peerService: PeerService = retrofit.create(PeerService::class.java)
+    val walletService = retrofit.create(WalletService::class.java)
     fun test() {
         val retrofit = Retrofit.Builder()
             .baseUrl("http://localhost:7070")

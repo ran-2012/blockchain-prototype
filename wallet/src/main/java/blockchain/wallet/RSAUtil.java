@@ -1,5 +1,7 @@
 package blockchain.wallet;
 
+import org.apache.commons.codec.binary.Hex;
+
 import javax.crypto.Cipher;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
@@ -46,6 +48,7 @@ public class RSAUtil {
         KeyPair keyPair = keygen.genKeyPair();
         //获取公钥并转成base64编码
         byte[] pub_key = keyPair.getPublic().getEncoded();
+        String hex = Hex.encodeHexString(pub_key);
         String publicKeyStr = Base64.getEncoder().encodeToString(pub_key);
         //获取私钥并转成base64编码
         byte[] pri_key = keyPair.getPrivate().getEncoded();

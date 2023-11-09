@@ -131,15 +131,15 @@ public class Wallet {
     public float getBalance() {
         float sum = 0;
         //遍历Map集合获取键值对对象
-        for(Map.Entry<String, TransactionOutput> item : ZJChain.UTXOs.entrySet()) {
-            TransactionOutput UTXO =  item.getValue();
-            //检查该UTXO是否属于该钱包
-            if(UTXO.isMine(publicKey)) {
-                //添加到钱包的UTXOs集合中
-                UTXOs.put(UTXO.id, UTXO);
-                sum += UTXO.value;
-            }
-        }
+//        for(Map.Entry<String, TransactionOutput> item : ZJChain.UTXOs.entrySet()) {
+//            TransactionOutput UTXO =  item.getValue();
+//            //检查该UTXO是否属于该钱包
+//            if(UTXO.isMine(publicKey)) {
+//                //添加到钱包的UTXOs集合中
+//                UTXOs.put(UTXO.id, UTXO);
+//                sum += UTXO.value;
+//            }
+//        }
         return sum;
     }
 
