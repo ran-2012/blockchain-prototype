@@ -3,6 +3,8 @@ package blockchain.data.core;
 import blockchain.data.exceptions.*;
 import blockchain.utility.Hash;
 import blockchain.utility.Log;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
@@ -42,14 +44,15 @@ public class Block {
 
     /**
      * 构造函数，构造一个已经完成挖矿的区块。完成挖矿的区块不允许添加新的 transaction
-     * @param height 区块编号
-     * @param data 区块数据（Transaction）
-     * @param timestamp 区块时间戳
-     * @param prevHash 上一区块哈希
+     *
+     * @param height     区块编号
+     * @param data       区块数据（Transaction）
+     * @param timestamp  区块时间戳
+     * @param prevHash   上一区块哈希
      * @param difficulty 难度
-     * @param nonce 随机值
-     * @throws TXEmptyException 传入的 transaction 为空时抛出
-     * @throws TXNotEvenException 传入的 transaction 数量不是偶数时抛出
+     * @param nonce      随机值
+     * @throws TXEmptyException      传入的 transaction 为空时抛出
+     * @throws TXNotEvenException    传入的 transaction 数量不是偶数时抛出
      * @throws NonceInvalidException 传入的 nonce 不满足难度要求时抛出
      */
     public Block(int height, ArrayList<Transaction> data, long timestamp, String prevHash, int difficulty, int nonce)
@@ -69,10 +72,11 @@ public class Block {
 
     /**
      * 构造函数，构造一个尚未完成挖矿的区块。未完成挖矿的区块可以在之后添加 transaction
-     * @param height 区块编号
-     * @param data 区块数据（Transaction）
+     *
+     * @param height    区块编号
+     * @param data      区块数据（Transaction）
      * @param timestamp 区块时间戳
-     * @param prevHash 前一区块哈希
+     * @param prevHash  前一区块哈希
      */
     public Block(int height, ArrayList<Transaction> data, long timestamp, String prevHash) {
         this.height = height;
@@ -87,6 +91,7 @@ public class Block {
 
     /**
      * 获取区块高度
+     *
      * @return 区块高度
      */
     public long getHeight() {
@@ -95,6 +100,7 @@ public class Block {
 
     /**
      * 设置区块编号
+     *
      * @param height 区块高度
      */
     public void setHeight(long height) {
@@ -103,6 +109,7 @@ public class Block {
 
     /**
      * 获取所有 transaction
+     *
      * @return transaction 数组
      */
     public ArrayList<Transaction> getData() {
@@ -111,6 +118,7 @@ public class Block {
 
     /**
      * 设置区块内的交易列表
+     *
      * @param data 交易列表
      */
     public void setData(ArrayList<Transaction> data) {
@@ -119,6 +127,7 @@ public class Block {
 
     /**
      * 向区块内添加一个 transaction，仅限尚未完成挖矿的区块
+     *
      * @param tx 要添加的 transaction
      * @return 是否添加成功
      * @throws AlreadyMinedException 区块已完成挖矿时抛出
@@ -134,6 +143,7 @@ public class Block {
 
     /**
      * 获取区块时间戳
+     *
      * @return 时间戳
      */
     public long getTimestamp() {
@@ -142,6 +152,7 @@ public class Block {
 
     /**
      * 设置时间戳
+     *
      * @param timestamp 时间戳
      */
     public void setTimestamp(long timestamp) {
@@ -150,6 +161,7 @@ public class Block {
 
     /**
      * 获取前一区块哈希
+     *
      * @return 前一区块哈希
      */
     public String getPrevHash() {
@@ -158,6 +170,7 @@ public class Block {
 
     /**
      * 设置前一区块哈希
+     *
      * @param prevHash 前一区块哈希
      */
     public void setPrevHash(String prevHash) {
@@ -166,6 +179,7 @@ public class Block {
 
     /**
      * 获取此区块哈希。若未完成挖矿则抛出异常
+     *
      * @return 此区块哈希
      */
     public String getHash() {
@@ -174,6 +188,7 @@ public class Block {
 
     /**
      * **慎用** 设置此区块哈希
+     *
      * @param hash 哈希
      */
     public void setHash(String hash) {
@@ -182,6 +197,7 @@ public class Block {
 
     /**
      * 获取此区块 merkle tree root。若未完成挖矿则抛出异常
+     *
      * @return 此区块哈希
      */
     public String getMerkleRoot() {
@@ -192,6 +208,7 @@ public class Block {
      * **慎用**
      * 常规情况下请调用 updateMerkleRoot 方法
      * 设置此区块 merkle root 值
+     *
      * @param merkleRoot merkle root 值
      */
     public void setMerkleRoot(String merkleRoot) {
@@ -200,6 +217,7 @@ public class Block {
 
     /**
      * 获取区块难度。若未完成挖矿则抛出异常
+     *
      * @return 难度
      */
     public int getDifficulty() {
@@ -208,6 +226,7 @@ public class Block {
 
     /**
      * 设置区块难度
+     *
      * @param difficulty 难度
      */
     public void setDifficulty(int difficulty) {
@@ -216,6 +235,7 @@ public class Block {
 
     /**
      * 获取区块随机值。若未完成挖矿则抛出异常
+     *
      * @return 随机值
      */
     public long getNonce() {
@@ -226,14 +246,16 @@ public class Block {
      * **慎用**
      * 挖矿请调用 mineBlock 方法
      * 设置随机值
+     *
      * @throws AlreadyMinedException 已经完成挖矿时抛出
      */
     public void setNonce(long nonce) throws AlreadyMinedException {
-            this.nonce = nonce;
+        this.nonce = nonce;
     }
 
     /**
      * 更新区块 merkle tree root 值
+     *
      * @return 更新后的 merkle tree root 值
      * @throws TXEmptyException 区块内 TX 为空时抛出
      */
@@ -254,7 +276,7 @@ public class Block {
             merkleTree[i + data.size() - 1] = data.get(i).getHash();
         }
         while (pow > 0) {
-            int startIndex = (int)Math.pow(2, pow) - 1;
+            int startIndex = (int) Math.pow(2, pow) - 1;
             int dataNum = startIndex + 1;
             for (int i = startIndex; i < startIndex + dataNum - 1; i += 2) {
                 try {
@@ -272,6 +294,7 @@ public class Block {
 
     /**
      * 更新区块哈希
+     *
      * @return 更新后的哈希
      * @throws NonceInvalidException nonce 不合法时抛出
      */
@@ -279,8 +302,7 @@ public class Block {
         if (merkleRoot.isEmpty()) {
             updateMerkleRoot();
         }
-        String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
-                String.valueOf(difficulty) + String.valueOf(nonce) + merkleRoot;
+        String headerStr = getHeaderString();
         Map<String, Object> hashResult;
         try {
             hashResult = Hash.hashAndCount0(headerStr);
@@ -289,7 +311,7 @@ public class Block {
             log.error("Cannot find instance SHA-256");
             return "";
         }
-        if ((int)(hashResult.get("NumOfZero")) >= difficulty) {
+        if ((int) (hashResult.get("NumOfZero")) >= difficulty) {
             this.hash = hashResult.get("Hash").toString();
             return this.hash;
         } else {
@@ -299,25 +321,20 @@ public class Block {
 
     /**
      * 计算 merkle tree root，计算哈区块哈希并检查是否满足难度要求，若满足难度要求返回 true 并将区块设置为已完成挖矿
+     *
      * @param nonce 随机值
      * @return 是否成功
      * @throws AlreadyMinedException 区块已挖矿时抛出
-     * @throws TXNotEvenException 区块内 transaction 数量不为偶数时抛出
-     * @throws TXEmptyException 传入的 transaction 为空时抛出
+     * @throws TXNotEvenException    区块内 transaction 数量不为偶数时抛出
+     * @throws TXEmptyException      传入的 transaction 为空时抛出
      */
-    public boolean mineBlock(int nonce) throws AlreadyMinedException, TXNotEvenException, TXEmptyException {
+    public boolean mineBlock(long nonce) throws AlreadyMinedException, TXNotEvenException, TXEmptyException {
+        this.nonce = nonce;
+
         updateMerkleRoot();
-        String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
-                String.valueOf(difficulty) + String.valueOf(nonce) + merkleRoot;
-        Map<String, Object> hashResult;
-        try {
-            hashResult = Hash.hashAndCount0(headerStr);
-        } catch (NoSuchAlgorithmException e) {
-            Log log = Log.get(this);
-            log.error("Cannot find instance SHA-256");
-            return false;
-        }
-        if ((int)(hashResult.get("NumOfZero")) >= difficulty) {
+        Map<String, Object> hashResult = getHeaderHashMap();
+        if (hashResult == null) return false;
+        if ((int) (hashResult.get("NumOfZero")) >= difficulty) {
             this.hash = hashResult.get("Hash").toString();
             this.nonce = nonce;
             return true;
@@ -326,13 +343,34 @@ public class Block {
         }
     }
 
+    @Nullable
+    private Map<String, Object> getHeaderHashMap() {
+        String headerStr = getHeaderString();
+        Map<String, Object> hashResult;
+        try {
+            hashResult = Hash.hashAndCount0(headerStr);
+        } catch (NoSuchAlgorithmException e) {
+            Log log = Log.get(this);
+            log.error("Cannot find instance SHA-256");
+            return null;
+        }
+        return hashResult;
+    }
+
+    @NotNull
+    private String getHeaderString() {
+        return String.valueOf(height) + timestamp + prevHash +
+                difficulty + nonce + merkleRoot;
+    }
+
     /**
      * 验证区块 merkel tree 以及哈希
+     *
      * @return 区块哈希以及 merkel tree root 是否正确
-     * @throws NotMinedException 区块尚未挖矿时抛出
+     * @throws NotMinedException          区块尚未挖矿时抛出
      * @throws MerkleTreeInvalidException 区块内 transaction 与 merkel tree root 不符时抛出
-     * @throws BlockInvalidException 区块哈希不符时抛出
-     * @throws NonceInvalidException 区块哈希不符难度时抛出
+     * @throws BlockInvalidException      区块哈希不符时抛出
+     * @throws NonceInvalidException      区块哈希不符难度时抛出
      */
     public boolean validate()
             throws NotMinedException, MerkleTreeInvalidException, BlockInvalidException, TXEmptyException, NonceInvalidException {
@@ -345,17 +383,9 @@ public class Block {
             this.merkleRoot = oldMerkleRoot;
             throw new MerkleTreeInvalidException();
         }
-        String headerStr = String.valueOf(height) + String.valueOf(timestamp) + prevHash + hash +
-                String.valueOf(difficulty) + String.valueOf(nonce) + merkleRoot;
-        Map<String, Object> hashResult;
-        try {
-            hashResult = Hash.hashAndCount0(headerStr);
-        } catch (NoSuchAlgorithmException e) {
-            Log log = Log.get(this);
-            log.error("Cannot find instance SHA-256");
-            return false;
-        }
-        if ((int)(hashResult.get("NumOfZero")) < difficulty) {
+        Map<String, Object> hashResult = getHeaderHashMap();
+        if (hashResult == null) return false;
+        if ((int) (hashResult.get("NumOfZero")) < difficulty) {
             throw new NonceInvalidException();
         }
         if (!Objects.equals(hash, hashResult.get("Hash").toString())) {

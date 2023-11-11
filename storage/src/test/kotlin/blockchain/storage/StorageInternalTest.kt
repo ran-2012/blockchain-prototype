@@ -1,9 +1,11 @@
 package blockchain.storage
 
 import blockchain.data.core.Block
+import blockchain.data.core.Transaction
 import blockchain.data.core.Utxo
 import org.junit.jupiter.api.*
 import java.util.Arrays.asList
+import java.util.Date
 
 @Suppress("UsePropertyAccessSyntax")
 class StorageInternalTest {
@@ -239,4 +241,23 @@ class StorageInternalTest {
     }
 
 
+    @Test
+    fun block() {
+        val list = ArrayList<Transaction>()
+        val transaction  = Transaction()
+        list.add(transaction)
+        val block = Block(10, list, Date().time, "123123", 0, 1001000);
+
+        val hash = block.updateBlockHash()
+        val hash1 = block.updateBlockHash()
+        Assertions.assertEquals(hash, hash1)
+
+        storageInternal.addBlock(block)
+
+        val block1 = storageInternal.getBlock(hash)!!
+
+        block1.updateBlockHash()
+
+        Assertions.assertEquals(hash, block1.hash)
+    }
 }

@@ -6,7 +6,7 @@ class TransactionInputOutputBase {
     long value;
     String signature;
 
-    public TransactionInputOutputBase(String address, int value, String signature) {
+    public TransactionInputOutputBase(String address, long value, String signature) {
         this.address = address;
         this.value = value;
         this.signature = signature;
@@ -38,7 +38,7 @@ class TransactionInputOutputBase {
         this.address = address;
     }
 
-    public void setValue(int value) {
+    public void setValue(long value) {
         this.value = value;
     }
 
