@@ -32,14 +32,13 @@ class HttpServer @JvmOverloads constructor(
     /**
      * Run callback on single thread to ensure thread safety.
      */
-    private val coroutineContext: CoroutineContext = Executors.newSingleThreadExecutor().asCoroutineDispatcher() + exceptionHandler
+    private val coroutineContext: CoroutineContext =
+        Executors.newSingleThreadExecutor().asCoroutineDispatcher() + exceptionHandler
     private val scope: CoroutineScope = CoroutineScope(coroutineContext)
 
+    private var app: Javalin? = null
     private val peerController: PeerController = PeerController(scope, callback)
     private val walletController: WalletController = WalletController(scope, callback)
-
-    companion object {
-    }
 
     fun setCallback(callback: Callback) {
         this.callback = callback
@@ -53,11 +52,11 @@ class HttpServer @JvmOverloads constructor(
      */
     suspend fun start() = suspendCoroutine {
         log.info("Starting server")
-        Javalin
+        app = Javalin
             //===========================================//
             // Configuration
             .create { config ->
-                config.requestLogger.http { ctx, ms ->
+                config.requestLogger.http { ctx, _ ->
                     log.debug("Request received, url: {}", ctx.url())
                 }
                 config.jsonMapper(JavalinGson())
@@ -76,28 +75,31 @@ class HttpServer @JvmOverloads constructor(
             //===========================================//
             // Peer interfaces
             .post(PeerService.BLOCKS) { ctx ->
-                runBlocking {
-                    peerController.newBlock(ctx.bodyAsClass(Block::class.java))
+                val paramMap = ctx.pathParamMap()
+                if (paramMap.containsKey(PeerService.PARAM_MIN)) {
+                    val min = paramMap[PeerService.PARAM_MIN]!!.toLong()
+                    val max = if (paramMap.containsKey(PeerService.PARAM_MAX)) {
+                        paramMap[PeerService.PARAM_MAX]!!.toLong()
+                    } else {
+                        -1
+                    }
+                    runBlocking {
+                        ctx.json(peerController.getBlockRange(min, max))
+                    }
+                } else {
+                    runBlocking {
+                        peerController.newBlock(ctx.bodyAsClass(Block::class.java))
+                    }
                 }
             }
             .get(PeerService.BLOCKS_WITH_HASH) { ctx ->
                 runBlocking {
                     val block = peerController.getBlockWithHash(ctx.pathParam("hash"))
                     if (block == null) {
-                        ctx.status(404);
+                        ctx.status(404)
                     } else {
                         ctx.json(block)
                     }
-                }
-            }
-            .get(PeerService.BLOCKS) { ctx ->
-                runBlocking {
-                    ctx.json(
-                        peerController.getBlockRange(
-                            ctx.pathParam(PeerService.PARAM_MIN).toLong(),
-                            ctx.pathParam(PeerService.PARAM_MAX).toLong()
-                        )
-                    )
                 }
             }
             //===========================================//
@@ -140,6 +142,11 @@ class HttpServer @JvmOverloads constructor(
             }
             //===========================================//
             .start(port)
+
+    }
+
+    fun stop() {
+        app?.stop()
     }
 
 }

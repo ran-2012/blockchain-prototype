@@ -2,6 +2,7 @@ package blockchain.network.core
 
 import blockchain.data.core.Transaction
 import blockchain.data.core.Utxo
+import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
 import retrofit2.http.Query
@@ -16,7 +17,7 @@ interface WalletService {
     ): Transaction?
 
     @POST(Companion.TRANSACTION)
-    suspend fun newTransaction(transaction: Transaction)
+    suspend fun newTransaction(@Body transaction: Transaction)
 
     @GET(Companion.UTXO)
     suspend fun getUtxo(@Query(PARAM_ADDRESS) address: String): List<Utxo>

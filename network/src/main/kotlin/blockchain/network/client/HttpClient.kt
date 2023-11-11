@@ -22,18 +22,10 @@ class HttpClient(baseUrl: String) {
     }
 
     private val retrofit = Retrofit.Builder()
+        .addConverterFactory(GsonConverterFactory.create())
         .baseUrl(baseUrl)
         .client(okhttpClient)
         .build()
 
     val peerService: PeerService = retrofit.create(PeerService::class.java)
-    fun test() {
-        val retrofit = Retrofit.Builder()
-            .baseUrl("http://localhost:7070")
-            .addConverterFactory(GsonConverterFactory.create())
-            .build()
-        val emptyService = retrofit.create(EmptyService::class.java)
-        val gson = Gson()
-        log.info(gson.toJson(emptyService.hello().execute().body()))
-    }
 }

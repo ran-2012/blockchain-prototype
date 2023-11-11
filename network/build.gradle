@@ -23,8 +23,12 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlin_coroutine_version")
 
-    testImplementation "org.jetbrains.kotlin:kotlin-test-junit:$kotlin_version"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.9.1'
+    testImplementation platform('org.junit:junit-bom:5.9.1')
+}
+
+test {
+    useJUnitPlatform()
 }
 
 kotlin {
