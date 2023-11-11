@@ -2,47 +2,52 @@ package blockchain.data.core;
 
 class TransactionInputOutputBase {
 
-    String address;
+    long publicKey;  // use RSA public key
+    String publicKeyHash;  // todo implement P2PKH
     long value;
-    String signature;
 
-    public TransactionInputOutputBase(String address, int value, String signature) {
-        this.address = address;
+    public TransactionInputOutputBase(long publicKey, long value) {
+        this.publicKey = publicKey;
         this.value = value;
-        this.signature = signature;
+    }
+
+    public TransactionInputOutputBase(long publicKey, String publicKeyHash, long value) {
+        this.publicKey = publicKey;
+        this.publicKeyHash = publicKeyHash;
+        this.value = value;
     }
 
     @Override
     public String toString(){
-        return "address=".concat(address).concat(",value=").concat(Long.toString(value)).
-                concat(",signature=").concat(signature);  // todo signature should not be included for hash?
+        return "address=".concat(Long.toString(publicKey)).concat("publicKeyHash=").concat(publicKeyHash).concat(",value=").concat(Long.toString(value));
     }
 
     public String contentString(){
-        return "address=".concat(address).concat(",value=").concat(Long.toString(value));  // without signature
+        return "address=".concat(Long.toString(publicKey)).concat(",value=").concat(Long.toString(value));  // todo add publicKeyHash
     }
 
-    public String getAddress() {
-        return address;
+    public long getPublicKey() {
+        return publicKey;
     }
 
     public long getValue() {
         return value;
     }
 
-    public String getSignature() {
-        return signature;
+    public String getPublicKeyHash() {
+        return publicKeyHash;
     }
 
-    public void setAddress(String address) {
-        this.address = address;
+    public void setPublicKeyHash(String publicKeyHash) {
+        this.publicKeyHash = publicKeyHash;
     }
 
-    public void setValue(int value) {
+    public void setPublicKey(long publicKey) {
+        this.publicKey = publicKey;
+    }
+
+    public void setValue(long value) {
         this.value = value;
     }
 
-    public void setSignature(String signature) {
-        this.signature = signature;
-    }
 }

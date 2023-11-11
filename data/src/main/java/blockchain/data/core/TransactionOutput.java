@@ -2,18 +2,11 @@ package blockchain.data.core;
 
 public class TransactionOutput extends TransactionInputOutputBase{
 
-    boolean coinbase = false;
-
-    public TransactionOutput(String address, int value, String signature, boolean coinbase) {
-        super(address, value, signature);
-        this.coinbase = coinbase;
+    public TransactionOutput(long publicKey, long value) {
+        super(publicKey, value);
     }
 
-    public boolean isCoinbase() {
-        return coinbase;
-    }
-
-    public void setCoinbase(boolean coinbase) {
-        this.coinbase = coinbase;
+    public TransactionOutput(long publicKey, String publicKeyHash, long value) { // todo implement publicKeyHash
+        super(publicKey, publicKeyHash, value);
     }
 }
