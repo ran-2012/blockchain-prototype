@@ -1,6 +1,7 @@
 package blockchain.network
 
 import blockchain.data.core.Block
+import blockchain.data.core.Transaction
 import blockchain.network.client.HttpClient
 import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
@@ -30,6 +31,12 @@ class Broadcaster @JvmOverloads constructor(initialPeerMap: Map<String, String> 
     suspend fun newBlock(block: Block) {
         for (key in getKeySet()) {
             peerMap[key]?.peerService?.newBlock(block)
+        }
+    }
+
+    suspend fun newTransaction(transaction: Transaction) {
+        for (key in getKeySet()) {
+            peerMap[key]?.peerService?.newTransaction(transaction)
         }
     }
 

@@ -1,6 +1,7 @@
 package blockchain.network.server
 
 import blockchain.data.core.Block
+import blockchain.data.core.Transaction
 import blockchain.network.INetwork
 import blockchain.network.core.PeerService
 import blockchain.storage.Storage
@@ -17,6 +18,17 @@ class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callba
                 callback.onNewBlockReceived(block)
             } catch (e: Exception) {
                 log.warn("Failed to process new block")
+                e.printStackTrace()
+            }
+        }
+    }
+
+    override suspend fun newTransaction(transaction: Transaction) {
+        scope.launch {
+            try {
+                callback.onSignedTransactionReceived(transaction)
+            } catch (e: Exception) {
+                log.warn("Failed to process new transaction")
                 e.printStackTrace()
             }
         }

@@ -102,6 +102,11 @@ class HttpServer @JvmOverloads constructor(
                     }
                 }
             }
+            .post(PeerService.TRANSACTION) { ctx ->
+                runBlocking {
+                    peerController.newTransaction(ctx.bodyAsClass(Transaction::class.java))
+                }
+            }
             //===========================================//
             // Wallet interfaces
             .get(WalletService.TRANSACTION) { ctx ->
