@@ -247,9 +247,8 @@ public class Block {
      * 挖矿请调用 mineBlock 方法
      * 设置随机值
      *
-     * @throws AlreadyMinedException 已经完成挖矿时抛出
      */
-    public void setNonce(long nonce) throws AlreadyMinedException {
+    public void setNonce(long nonce) {
         this.nonce = nonce;
     }
 
@@ -324,11 +323,9 @@ public class Block {
      *
      * @param nonce 随机值
      * @return 是否成功
-     * @throws AlreadyMinedException 区块已挖矿时抛出
-     * @throws TXNotEvenException    区块内 transaction 数量不为偶数时抛出
      * @throws TXEmptyException      传入的 transaction 为空时抛出
      */
-    public boolean mineBlock(long nonce) throws AlreadyMinedException, TXNotEvenException, TXEmptyException {
+    public boolean mineBlock(long nonce) throws TXEmptyException {
         this.nonce = nonce;
 
         updateMerkleRoot();

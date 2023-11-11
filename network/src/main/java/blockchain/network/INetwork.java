@@ -32,7 +32,7 @@ public interface INetwork {
             return new ArrayList<>();
         }
 
-        public Map<Long, List<Block>> onBLockRangeRequested(Long heightMin, Long heightMax) {
+        public Map<Long, List<Block>> onBlockRangeRequested(Long heightMin, Long heightMax) {
             return new HashMap<>();
         }
 
