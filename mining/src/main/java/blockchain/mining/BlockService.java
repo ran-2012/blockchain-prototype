@@ -9,90 +9,146 @@ import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 import blockchain.data.core.TransactionInput;
 import blockchain.data.core.TransactionOutput;
+import blockchain.network.INetwork;
+import blockchain.network.Network;
 import blockchain.storage.Storage;
+import blockchain.utility.Log;
 
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 public class BlockService {
 
-    /**
-     * 创建创世区块
-     *
-     * @return
-     */
+    Log log = Log.get(this);
 
-    public Block createGenesisBlock() {
-        Block genesisBlock = new Block();
-        //设置创世区块高度为1
-        genesisBlock.setHeight(1);
-        genesisBlock.setTimestamp(System.currentTimeMillis());
-        genesisBlock.setDifficulty(1);
-        //封装第一笔交易,硬编码
-        ArrayList<TransactionInput> txInputList = new ArrayList<TransactionInput>();
-        ArrayList<TransactionOutput> txOutputList = new ArrayList<TransactionOutput>();
-        ArrayList<Transaction> txList = new ArrayList<Transaction>();
-        Transaction tx = new Transaction("000000000000000000000000000000000000000000000000000000000000000", txInputList, txOutputList);
-        txList.add(tx);
-        genesisBlock.setData(txList);
-        //设置创世区块的hash值
-        try {
-            genesisBlock.updateBlockHash();
-        } catch (Exception ignore) {
+    private final MiningService miningService = MiningService.getInstance();
+    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final Internal internal = new Internal();
+
+    private final Runnable checkTransactionPoolRunnable = () -> {
+        if (miningService.isRunning()) {
+            return;
         }
-        //添加到区块链存储中
-        BlockCache.addBlockSync(genesisBlock);
-        System.out.println("创世区块成功创建并存储");
-        return genesisBlock;
+
+        if (checkTransactionPool()) {
+            List<Transaction> list = pollTransaction();
+            Block block = generateNewBlock(list);
+            startMining(block);
+        } else {
+            scheduleCheckTransactionPool();
+        }
+    };
+
+    public BlockService(boolean startMining) {
+        Network.getInstance().registerCallback(networkCallback);
+        miningService.setCallback(callback);
+        if (startMining) {
+            scheduleCheckTransactionPool();
+        }
+    }
+
+    private void addNewBlock(Block block) {
+        executor.execute(() -> internal.addNewBlock(block));
+    }
+
+    private void revertBlock(String hash) {
+        executor.execute(() -> internal.revertBlock(hash));
+    }
+
+    private void addNewTransaction(Transaction transaction) {
+        executor.execute(() -> internal.addNewTransaction(transaction));
+    }
+
+    private void scheduleCheckTransactionPool() {
+        executor.schedule(checkTransactionPoolRunnable, 1, TimeUnit.SECONDS);
     }
 
     /**
-     * 添加新区块到当前节点的区块链中
+     * Check if it has enough transaction to start mining.
      *
-     * @param newBlock
+     * @return True: You can start mining now
      */
-    public boolean addBlock(Block newBlock) {
-        //先对新区块的合法性进行校验
-        if (isValidNewBlock(newBlock)) {
-            BlockCache.addBlockSync(newBlock);
-            // 新区块的业务数据需要加入到已打包的业务数据集合里去
-            for (Transaction transaction : newBlock.getData()) {
-                BlockCache.addTransactionSync(transaction);
-            }
-            return true;
-        }
+    private boolean checkTransactionPool() {
+        // TODO: Check number of transaction in pool or time between previous block and current time.
         return false;
     }
 
-    public Block getblock(long height) {
-        // 获取指定高度的区块
-        Map<Long, List<Block>> blockMap = Storage.getInstance().getBlockRange(height, height);
-        List<Block> blockList = blockMap.get(height);
-
-        // 检查是否存在指定高度的区块
-        if (blockList != null && !blockList.isEmpty()) {
-            Block block = blockList.get(0);
-            String blockHash = block.getHash();
-            System.out.println("Block hash at height" + height + ": " + blockHash);
-            return block;
-        } else {
-            System.out.println("Block at height" + height + "not found");
-        }
-        return null;
+    private List<Transaction> pollTransaction() {
+        ArrayList list = new ArrayList<Transaction>();
+        // TODO: select transactions in the pool
+        return list;
     }
 
-    public boolean isValidNewBlock(Block newBlock) {
-        if (!getblock(newBlock.getHeight() - 1).getHash().equals(newBlock.getPrevHash())) {
-            System.out.println("新区块的前一个区块hash验证不通过");
-            return false;
-        } else {
-            try {
-                return newBlock.validate();
-            } catch (Exception ignore) {
-                return false;
+    private Block generateNewBlock(List<Transaction> transactions) {
+        // Generate block here then mine
+        Block block = new Block();
+        // TODO: Fill data
+        return block;
+    }
+
+    private void startMining(Block block) {
+        miningService.setBlock(block);
+        miningService.start();
+    }
+
+    /**
+     * Functions in this class in run on single thread to ensure thread-safety.<p>
+     * Use <code>execute.schedule(new Runnable())</code> to run these functions.
+     */
+    private class Internal {
+        private void addNewBlock(Block block) {
+            // TODO: Check block; Add block to database, check if has multi branches
+        }
+
+        private void addNewTransaction(Transaction transaction) {
+            // TODO: Check Transaction; Add to pool
+        }
+
+        private void revertBlock(String hash) {
+            // TODO: Revert block, remove block data; add transaction and utxo back to the pool
+            // TODO: Blocks in previous height may also need to revert, remember to check them
+        }
+    }
+
+    private final MiningService.Callback callback = new MiningService.Callback() {
+        @Override
+        public void onNewBlockMined(Block block) {
+            addNewBlock(block);
+            // TODO: Broadcast the block
+        }
+
+        @Override
+        public void onAllNonceTried(Block block) {
+            // TODO: ues new timestamp then start again
+            block.setTimestamp(new Date().getTime());
+            miningService.setBlock(block);
+            miningService.start();
+        }
+    };
+
+    private final INetwork.Callback networkCallback = new INetwork.Callback() {
+        @Override
+        public void onNewBlockReceived(Block data) {
+            if (miningService.getBlock().getHeight() == data.getHeight()) {
+                miningService.stop();
             }
+            addNewBlock(data);
         }
-    }
 
+        @Override
+        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, Long value) {
+            // TODO: query utxo list and generate a transaction (or reject this transaction)
+            return super.onNewTransactionRequested(sourceAddress, targetAddress, value);
+        }
+
+        @Override
+        public void onSignedTransactionReceived(Transaction transaction) {
+            addNewTransaction(transaction);
+        }
+    };
 }

@@ -29,6 +29,14 @@ public class MiningService {
     private Block block;
     private Callback callback;
 
+    public boolean isRunning() {
+        return running.get();
+    }
+
+    public Block getBlock() {
+        return block;
+    }
+
     public void start() {
         running.set(true);
         mined.set(false);
