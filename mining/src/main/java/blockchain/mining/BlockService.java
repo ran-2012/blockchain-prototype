@@ -26,10 +26,11 @@ public class BlockService {
         genesisBlock.setHeight(1);
         genesisBlock.setTimestamp(System.currentTimeMillis());
         genesisBlock.setDifficulty(1);
-        //封装交易数据
+        //封装第一笔交易,硬编码
+        ArrayList<TransactionInput> txInputList = new ArrayList<TransactionInput>();
+        ArrayList<TransactionOutput> txOutputList = new ArrayList<TransactionOutput>();
         ArrayList<Transaction> txList = new ArrayList<Transaction>();
-        Transaction tx = new Transaction();
-        tx.setHash("0000000000000000000000000000000000000000000000000000000000000000");
+        Transaction tx = new Transaction("000000000000000000000000000000000000000000000000000000000000000",txInputList,txOutputList);
         txList.add(tx);
         genesisBlock.setData(txList);
         //设置创世区块的hash值

@@ -33,7 +33,8 @@ public class PowService {
      */
     public Block mine(){
 
-        // 封装交易数据集合
+        // 通过通信封装交易数据集合
+
         ArrayList<Transaction> txList = new ArrayList<Transaction>();
         Transaction tx1 = new Transaction();
 
