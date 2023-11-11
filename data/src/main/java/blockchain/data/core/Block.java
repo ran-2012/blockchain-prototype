@@ -4,7 +4,6 @@ import blockchain.data.exceptions.*;
 import blockchain.utility.Hash;
 import blockchain.utility.Log;
 
-import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
 
@@ -259,7 +258,7 @@ public class Block {
             int dataNum = startIndex + 1;
             for (int i = startIndex; i < startIndex + dataNum - 1; i += 2) {
                 try {
-                    merkleTree[(i - 1) / 2] = Hash.hash(merkleTree[i] + merkleTree[i + 1]);
+                    merkleTree[(i - 1) / 2] = Hash.hashString(merkleTree[i] + merkleTree[i + 1]);
                 } catch (Exception ex) {
                     merkleTree[(i - 1) / 2] = "";
                 }

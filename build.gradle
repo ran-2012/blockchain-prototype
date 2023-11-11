@@ -27,6 +27,8 @@ dependencies {
     implementation project(':network')
     implementation project(':utility')
 
+    implementation 'com.beust:jcommander:1.82'
+
     testImplementation 'org.jetbrains.kotlin:kotlin-test'
 }
 
