@@ -40,6 +40,8 @@ public interface IStorage {
     @Nullable
     Block getBlock(String hash);
 
+    List<Block> getLastBlock();
+
     void addTransaction(Transaction data);
 
     void removeTransaction(String hash);
@@ -55,4 +57,8 @@ public interface IStorage {
     Set<String> getAddressAll();
 
     Set<Utxo> getUtxoAll();
+
+    void setHeight(long height);
+
+    long getHeight();
 }

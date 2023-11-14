@@ -4,6 +4,7 @@ import blockchain.data.core.Block
 import blockchain.data.core.Transaction
 import blockchain.data.core.Utxo
 import com.mongodb.client.model.Filters
+import com.mongodb.client.model.Sorts
 import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
@@ -116,6 +117,21 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
+    override fun getLastBlock(): MutableList<Block> {
+        val list = ArrayList<Block>()
+        runBlocking {
+            try {
+                val block = client.block().find(Sorts.descending(DataBaseClient.FIELD_HEIGHT)).limit(1).single()
+                client.block().find(Filters.eq(DataBaseClient.FIELD_HEIGHT, block.height)).collect {
+                    list.add(it)
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+        return list
+    }
+
     override fun addTransaction(data: Transaction) {
         runBlocking {
             client.transaction().insertOne(data)
@@ -156,5 +172,13 @@ class StorageInternal(dbName: String) : IStorage {
 
     override fun getUtxoAll(): Set<Utxo> {
         return redisClient.getUtxoAll()
+    }
+
+    override fun setHeight(height: Long) {
+        redisClient.setHeight(height)
+    }
+
+    override fun getHeight(): Long {
+        return redisClient.getHeight()
     }
 }

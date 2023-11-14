@@ -63,35 +63,22 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
     }
 
     fun addUtxo(utxo: Utxo) {
-        val address = utxo.address
-        val hash = utxo.signature
+        val address = utxo.publicKey
         val transactionStr = gson.toJson(utxo)
-        jedis.set(addPrefix(PREFIX_UTXO, hash), transactionStr)
-        jedis.sadd(addPrefix(PREFIX_ADDRESS, address), hash)
+        jedis.sadd(addPrefix(PREFIX_ADDRESS, address), transactionStr)
         jedis.sadd(addPrefix(PREFIX_ADDRESS, "ALL"), address)
     }
 
     fun removeUtxo(utxo: Utxo) {
-        val address = utxo.address
-        val hash = utxo.signature
-        jedis.del(addPrefix(PREFIX_UTXO, hash))
-        jedis.srem(addPrefix(PREFIX_ADDRESS, address), hash)
-    }
-
-    fun getUtxoByHash(hash: String): Utxo? {
-        val utxoStr = jedis.get(addPrefix(PREFIX_UTXO, hash))
-        return if (utxoStr.isEmpty()) {
-            null
-        } else {
-            gson.fromJson(utxoStr, Utxo::class.java)
-        }
+        val address = utxo.publicKey
+        jedis.srem(addPrefix(PREFIX_ADDRESS, address), address)
     }
 
     fun getUtxo(address: String): Set<Utxo> {
         val set = jedis.smembers(addPrefix(PREFIX_ADDRESS, address)) ?: HashSet()
         val result = HashSet<Utxo>()
-        for (hash in set) {
-            val utxo = gson.fromJson(jedis.get(addPrefix(PREFIX_UTXO, hash)), Utxo::class.java)
+        for (str in set) {
+            val utxo = gson.fromJson(str, Utxo::class.java)
             result.add(utxo)
         }
         return result
@@ -102,16 +89,23 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
     }
 
     fun getUtxoAll(): Set<Utxo> {
-        val keys = jedis.keys(addPrefix(PREFIX_UTXO, "*"))
+        val keys = jedis.smembers(addPrefix(PREFIX_UTXO, "ALL"))
         val result = HashSet<Utxo>()
-        for (key in keys) {
-            val utxoStr = jedis.get(key)
-            if (utxoStr.isNotEmpty()) {
-                val utxo = gson.fromJson(utxoStr, Utxo::class.java)
-                result.add(utxo)
+        for (address in keys) {
+            val set = jedis.smembers(addPrefix(PREFIX_ADDRESS, address))
+            for (str in set) {
+                result.add(gson.fromJson(str, Utxo::class.java))
             }
         }
         return result
+    }
+
+    fun setHeight(height: Long) {
+        jedis.set(addPrefix("height"), height.toString())
+    }
+
+    fun getHeight(): Long {
+        return jedis.get(addPrefix("height")).toLong()
     }
 
     @TestOnly
