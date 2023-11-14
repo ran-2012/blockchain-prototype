@@ -36,7 +36,7 @@ public interface INetwork {
             return new HashMap<>();
         }
 
-        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, Long value) {
+        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
             return null;
         }
 
