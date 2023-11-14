@@ -1,5 +1,5 @@
 plugins {
-    id 'java'
+    id 'org.jetbrains.kotlin.jvm' version "$kotlin_version"
     id 'application'
 }
 
@@ -11,6 +11,14 @@ repositories {
 }
 
 dependencies {
+    implementation project(':data')
+    implementation project(':utility')
+    implementation project(":network")
+
+    implementation group: 'commons-codec', name: 'commons-codec', version: '1.16.0'
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine_version")
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlin_coroutine_version")
+
     testImplementation platform('org.junit:junit-bom:5.9.1')
     testImplementation 'org.junit.jupiter:junit-jupiter'
 }
