@@ -2,16 +2,16 @@ package blockchain.data.core;
 
 class TransactionInputOutputBase {
 
-    long publicKey;  // use RSA public key
+    String publicKey;  // use RSA public key
     String publicKeyHash;  // todo implement P2PKH
     long value;
 
-    public TransactionInputOutputBase(long publicKey, long value) {
+    public TransactionInputOutputBase(String publicKey, long value) {
         this.publicKey = publicKey;
         this.value = value;
     }
 
-    public TransactionInputOutputBase(long publicKey, String publicKeyHash, long value) {
+    public TransactionInputOutputBase(String publicKey, String publicKeyHash, long value) {
         this.publicKey = publicKey;
         this.publicKeyHash = publicKeyHash;
         this.value = value;
@@ -19,14 +19,14 @@ class TransactionInputOutputBase {
 
     @Override
     public String toString(){
-        return "address=".concat(Long.toString(publicKey)).concat("publicKeyHash=").concat(publicKeyHash).concat(",value=").concat(Long.toString(value));
+        return "address=".concat(publicKey).concat("publicKeyHash=").concat(publicKeyHash).concat(",value=").concat(Long.toString(value));
     }
 
     public String contentString(){
-        return "address=".concat(Long.toString(publicKey)).concat(",value=").concat(Long.toString(value));  // todo add publicKeyHash
+        return "address=".concat(publicKey).concat(",value=").concat(Long.toString(value));  // todo add publicKeyHash
     }
 
-    public long getPublicKey() {
+    public String getPublicKey() {
         return publicKey;
     }
 
@@ -42,7 +42,7 @@ class TransactionInputOutputBase {
         this.publicKeyHash = publicKeyHash;
     }
 
-    public void setPublicKey(long publicKey) {
+    public void setPublicKey(String publicKey) {
         this.publicKey = publicKey;
     }
 
