@@ -26,7 +26,7 @@ public interface IStorage {
      *
      * @return Map of height->block
      */
-    Map<Long, List<Block>> getBlockAll();
+    Map<Long, Block> getBlockAll();
 
     /**
      * Get blocks by height.
@@ -35,18 +35,18 @@ public interface IStorage {
      * @param heightMax Height max
      * @return Map of height->block
      */
-    Map<Long, List<Block>> getBlockRange(Long heightMin, Long heightMax);
+    Map<Long, Block> getBlockRange(Long heightMin, Long heightMax);
 
     @Nullable
     Block getBlock(String hash);
 
-    List<Block> getLastBlock();
+    Block getLastBlock();
 
     void addTransaction(Transaction data);
 
     void removeTransaction(String hash);
 
-    List<Transaction> getTransaction(String sourceAddress);
+    List<Transaction> getTransactionAll(String sourceAddress);
 
     void addUtxo(Utxo data);
 

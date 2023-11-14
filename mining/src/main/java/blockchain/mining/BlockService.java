@@ -95,8 +95,7 @@ public class BlockService {
     private boolean checkTransactionPool() {
         // TODO: Check the time between previous block and current time.
         long currentTime = new Date().getTime();
-        List<Block> lastBLocks = storage.getLastBlock();
-        Block lastBlock = lastBLocks.get(0);
+        Block lastBlock = storage.getLastBlock();
         long previousBlockTime = lastBlock.getTimestamp();
         long timeDifference = currentTime - previousBlockTime;
         return timeDifference > 60000;
@@ -136,7 +135,7 @@ public class BlockService {
         // Generate block here then mine
         Block block = new Block();
         //TODO:Fill related data into the new block
-        block.setPrevHash(storage.getLastBlock().get(0).getHash());
+        block.setPrevHash(storage.getLastBlock().getHash());
         block.setTimestamp(new Date().getTime());
         for (Transaction transaction : transactions) {
             try {
@@ -146,7 +145,7 @@ public class BlockService {
         }
         //TODO:set nonce
         block.setNonce(0);
-        block.setHeight(storage.getLastBlock().get(0).getHeight() + 1); // Set the block height to the previous block's height plus one
+        block.setHeight(storage.getLastBlock().getHeight() + 1); // Set the block height to the previous block's height plus one
         try {
             block.setHash(Hash.hashString(block.toString()));
         } catch (NoSuchAlgorithmException e) {
@@ -167,7 +166,11 @@ public class BlockService {
     private class Internal {
 
         private void addNewBlock(Block block) {
-            // TODO: Check block; Add block to database, check if the blockchain has multi branches in the previous height
+            if (block.getHeight() <= storage.getHeight()) {
+                log.info("Block height {} is smaller than current height {}, skip.",
+                        block.getHeight(), storage.getHeight());
+                return;
+            }
             // Check block
             try {
                 block.validate();
@@ -175,8 +178,8 @@ public class BlockService {
                 log.error("Invalid block: hash mismatch");
                 return;
             }
-            List<Block> lastBlocks = storage.getLastBlock();
-            Block lastBlock = lastBlocks.get(0);
+
+            Block lastBlock =  storage.getLastBlock();
             if (!block.getPrevHash().equals(lastBlock.getHash())) {
                 log.error("Invalid block: previous hash mismatch");
                 return;
@@ -184,23 +187,7 @@ public class BlockService {
 
             // Add block to database
             storage.addBlock(block);
-            // Check if the blockchain has multi branches in the previous height
-            lastBlocks = storage.getLastBlock();
-            if (lastBlocks.size() > 1) {
-                // Remove other blocks and only maintain the block with the smallest hash value
-                Block smallestBlock = lastBlocks.get(0);
-                for (Block b : lastBlocks) {
-                    if (b.getHash().compareTo(smallestBlock.getHash()) < 0) {
-                        smallestBlock = b;
-                    }
-                }
-                for (Block b : lastBlocks) {
-                    revertBlock(b.getHash());
-                }
-                if (storage.getBlock(smallestBlock.getHash()) == null) {
-                    storage.addBlock(smallestBlock);
-                }
-            }
+            storage.setHeight(block.getHeight());
         }
 
         private void addNewTransaction(Transaction transaction) {

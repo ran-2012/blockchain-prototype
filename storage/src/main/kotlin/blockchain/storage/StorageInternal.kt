@@ -27,15 +27,8 @@ class StorageInternal(dbName: String) : IStorage {
         redisClient = RedisClient(dbName)
     }
 
-    private fun updateBlockMap(map: HashMap<Long, ArrayList<Block>>, block: Block) {
-        val height = block.height
-        if (map.containsKey(height)) {
-            map[height]?.add(block)
-        } else {
-            val list = ArrayList<Block>()
-            list.add(block)
-            map[height] = list
-        }
+    private fun updateBlockMap(map: HashMap<Long, Block>, block: Block) {
+        map[block.height] = block
     }
 
     private fun getRangeFilter(heightMin: Long, heightMax: Long): Bson {
@@ -87,18 +80,16 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun getBlockAll(): Map<Long, List<Block>> {
-        val map = HashMap<Long, ArrayList<Block>>()
+    override fun getBlockAll(): MutableMap<Long, Block> {
+        val map = HashMap<Long, Block>()
         runBlocking {
-            client.block().find().collect { block ->
-                updateBlockMap(map, block)
-            }
+            updateBlockMap(map, client.block().find().single())
         }
         return map
     }
 
-    override fun getBlockRange(heightMin: Long, heightMax: Long): Map<Long, List<Block>> {
-        val map = HashMap<Long, ArrayList<Block>>()
+    override fun getBlockRange(heightMin: Long, heightMax: Long): MutableMap<Long, Block> {
+        val map = HashMap<Long, Block>()
         runBlocking {
             client.block().find(getRangeFilter(heightMin, heightMax)).collect {
                 updateBlockMap(map, it)
@@ -117,19 +108,16 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun getLastBlock(): MutableList<Block> {
-        val list = ArrayList<Block>()
+    override fun getLastBlock(): Block {
+        var block = Block()
         runBlocking {
             try {
-                val block = client.block().find(Sorts.descending(DataBaseClient.FIELD_HEIGHT)).limit(1).single()
-                client.block().find(Filters.eq(DataBaseClient.FIELD_HEIGHT, block.height)).collect {
-                    list.add(it)
-                }
+                block = client.block().find(Sorts.descending(DataBaseClient.FIELD_HEIGHT)).limit(1).single()
             } catch (e: Exception) {
                 e.printStackTrace()
             }
         }
-        return list
+        return block
     }
 
     override fun addTransaction(data: Transaction) {
@@ -144,7 +132,7 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun getTransaction(sourceAddress: String): MutableList<Transaction> {
+    override fun getTransactionAll(sourceAddress: String): MutableList<Transaction> {
         val list = ArrayList<Transaction>()
         runBlocking {
             client.transaction().find(Filters.eq(DataBaseClient.FIELD_SOURCE_ADDRESS, sourceAddress)).collect {
