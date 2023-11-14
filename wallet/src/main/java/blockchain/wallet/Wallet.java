@@ -1,14 +1,8 @@
 package blockchain.wallet;
 
-import java.security.KeyFactory;
-import java.security.PrivateKey;
-import java.security.spec.PKCS8EncodedKeySpec;
-import java.util.Base64;
+import blockchain.utility.Rsa;
+
 import java.util.Map;
-
-import blockchain.wallet.CryptoUtil;
-import blockchain.wallet.RSACoder;
-
 
 
 public class Wallet {
@@ -53,24 +47,11 @@ public class Wallet {
         this.privateKey = privateKey;
     }
 
-    public static Wallet generateWallet() {
-        Map<String, String> initKeyPair;
-        try {
-            // 本地生成公私钥对
-            initKeyPair = RSACoder.createKeyPair(1024);
-            String publicKey = initKeyPair.get("publicKeyStr");
-            String privateKey=initKeyPair.get("privateKeyStr");
-            return new Wallet(publicKey, privateKey);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
     public static Wallet generateWallet1() {
         Map<String, String> initKeyPair;
         try {
             // 本地生成公私钥对
-            initKeyPair = RSAUtil.generateKey();
+            initKeyPair = Rsa.generateKey();
             String publicKey = initKeyPair.get("publicKeyStr");
             String privateKey=initKeyPair.get("privateKeyStr");
             return new Wallet(publicKey, privateKey);

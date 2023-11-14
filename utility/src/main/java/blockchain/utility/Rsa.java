@@ -1,6 +1,4 @@
-package blockchain.wallet;
-
-import org.apache.commons.codec.binary.Hex;
+package blockchain.utility;
 
 import javax.crypto.Cipher;
 import java.security.*;
@@ -10,13 +8,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- * @program: CSDN
- * @description: RSA工具类
- * @author: Alian
- * @create: 2021-06-08 09:30:14
- **/
-public class RSAUtil {
+public class Rsa {
 
     //签名算法名称
     private static final String RSA_KEY_ALGORITHM = "RSA";
@@ -28,11 +20,7 @@ public class RSAUtil {
     //RSA密钥长度,默认密钥长度是1024,密钥长度必须是64的倍数，在512到65536位之间,不管是RSA还是RSA2长度推荐使用2048
     private static final int KEY_SIZE = 2048;
 
-    /**
-     * 生成密钥对
-     *
-     * @return 返回包含公私钥的map
-     */
+
     public static Map<String, String> generateKey() {
         KeyPairGenerator keygen;
         try {
@@ -40,23 +28,15 @@ public class RSAUtil {
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException("RSA初始化密钥出现错误,算法异常");
         }
-        SecureRandom secrand = new SecureRandom();
-        //初始化随机产生器
-        secrand.setSeed("Alian".getBytes());
-        //初始化密钥生成器
-        keygen.initialize(KEY_SIZE, secrand);
+        SecureRandom random = new SecureRandom();
+        random.setSeed(System.currentTimeMillis());
+        keygen.initialize(KEY_SIZE, random);
         KeyPair keyPair = keygen.genKeyPair();
-        //获取公钥并转成base64编码
-        byte[] pub_key = keyPair.getPublic().getEncoded();
-        String hex = Hex.encodeHexString(pub_key);
-        String publicKeyStr = Base64.getEncoder().encodeToString(pub_key);
-        //获取私钥并转成base64编码
-        byte[] pri_key = keyPair.getPrivate().getEncoded();
-        String privateKeyStr = Base64.getEncoder().encodeToString(pri_key);
-        //创建一个Map返回结果
+        byte[] pubKey = keyPair.getPublic().getEncoded();
+        byte[] secretKey = keyPair.getPrivate().getEncoded();
         Map<String, String> keyPairMap = new HashMap<>();
-        keyPairMap.put("publicKeyStr", publicKeyStr);
-        keyPairMap.put("privateKeyStr", privateKeyStr);
+        keyPairMap.put("pk", Hash.byteToString(pubKey));
+        keyPairMap.put("sk", Hash.byteToString(secretKey));
         return keyPairMap;
     }
 

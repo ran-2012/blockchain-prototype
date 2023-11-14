@@ -15,6 +15,8 @@ dependencies {
     implementation project(':utility')
     implementation project(":network")
 
+    implementation 'com.google.code.gson:gson:2.10.1'
+    implementation 'info.picocli:picocli:4.7.5'
     implementation group: 'commons-codec', name: 'commons-codec', version: '1.16.0'
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlin_coroutine_version")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core-jvm:$kotlin_coroutine_version")

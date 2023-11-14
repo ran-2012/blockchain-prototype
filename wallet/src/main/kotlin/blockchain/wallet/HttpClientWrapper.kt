@@ -5,7 +5,7 @@ import blockchain.data.core.Utxo
 import blockchain.network.client.HttpClient
 import kotlinx.coroutines.runBlocking
 
-class HttpClientInternal(url: String) {
+class HttpClientWrapper(url: String) {
     private val httpClient = HttpClient(url)
 
     fun getTransaction(sourceAddress: String, targetAddress: String, value: Long): Transaction {
