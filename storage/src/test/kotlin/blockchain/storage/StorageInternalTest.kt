@@ -4,7 +4,6 @@ import blockchain.data.core.Block
 import blockchain.data.core.Transaction
 import blockchain.data.core.Utxo
 import org.junit.jupiter.api.*
-import java.util.Arrays.asList
 import java.util.Date
 
 @Suppress("UsePropertyAccessSyntax")
@@ -39,7 +38,7 @@ class StorageInternalTest {
     }
 
     private fun createUtxo(address: String, signature: String): Utxo {
-        return Utxo(address, 0, signature, false)
+        return Utxo(address, 0)
     }
 
 
@@ -50,9 +49,6 @@ class StorageInternalTest {
         var map = storageInternal.getBlockAll()
 
         Assertions.assertEquals(map.size, 1)
-        Assertions.assertEquals(map[1]!!.size, 1)
-        Assertions.assertEquals(map[1]!![0].hash, "1")
-        Assertions.assertEquals(map[1]!![0].height, 1)
 
         storageInternal.addBlock(createBlock(2, "2"))
         map = storageInternal.getBlockAll()
@@ -85,22 +81,12 @@ class StorageInternalTest {
     @Test
     fun removeBlockByHash() {
         storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(1, "12"))
         storageInternal.addBlock(createBlock(2, "21"))
-        storageInternal.addBlock(createBlock(2, "22"))
-        storageInternal.addBlock(createBlock(2, "23"))
         var map = storageInternal.getBlockAll()
 
         Assertions.assertEquals(map.size, 2)
-        Assertions.assertEquals(map[1]!!.size, 2)
 
-        storageInternal.removeBlockByHash("11")
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 2)
-        Assertions.assertEquals(map[1]!!.size, 1)
-
-        storageInternal.removeBlockByHash("12")
+        storageInternal.removeBlock("11")
         map = storageInternal.getBlockAll()
 
         Assertions.assertEquals(map.size, 1)
@@ -109,38 +95,25 @@ class StorageInternalTest {
     @Test
     fun removeBlockByHashRange() {
         storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(1, "12"))
         storageInternal.addBlock(createBlock(2, "21"))
-        storageInternal.addBlock(createBlock(2, "22"))
-        storageInternal.addBlock(createBlock(2, "23"))
         var map = storageInternal.getBlockAll()
 
         Assertions.assertEquals(map.size, 2)
-        Assertions.assertEquals(map[1]!!.size, 2)
 
-        storageInternal.removeBlockByHashRange(listOf("11", "21", "22"))
+        storageInternal.removeBlockByHashRange(listOf("11"))
         map = storageInternal.getBlockAll()
 
-        Assertions.assertEquals(map.size, 2)
-        Assertions.assertEquals(map[1]!!.size, 1)
-        Assertions.assertEquals(map[1]!![0].hash, "12")
-        Assertions.assertEquals(map[2]!!.size, 1)
-        Assertions.assertEquals(map[2]!![0].hash, "23")
+        Assertions.assertEquals(map.size, 1)
     }
 
     @Test
     fun removeBlockByHeightRange() {
         storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(1, "12"))
         storageInternal.addBlock(createBlock(2, "21"))
-        storageInternal.addBlock(createBlock(2, "22"))
-        storageInternal.addBlock(createBlock(2, "23"))
         storageInternal.addBlock(createBlock(3, "31"))
-        storageInternal.addBlock(createBlock(3, "32"))
         var map = storageInternal.getBlockAll()
 
         Assertions.assertEquals(map.size, 2)
-        Assertions.assertEquals(map[1]!!.size, 2)
 
         storageInternal.removeBlockByHeightRange(0, 1)
         map = storageInternal.getBlockAll()
@@ -170,7 +143,7 @@ class StorageInternalTest {
         Assertions.assertNotEquals(block, null)
         Assertions.assertEquals(block?.height, 1)
 
-        storageInternal.removeBlockByHash("1")
+        storageInternal.removeBlock("1")
         block = storageInternal.getBlock("1")
 
         Assertions.assertEquals(block, null)
@@ -190,13 +163,13 @@ class StorageInternalTest {
 
     @Test
     fun addUtxo() {
-        storageInternal.addUtxo(createUtxo("1", "1"))
+        storageInternal.addUtxo("1", 1, createUtxo("1", "1"))
         var set = storageInternal.getUtxoAll()
 
         Assertions.assertEquals(set.size, 1)
 
-        storageInternal.addUtxo(createUtxo("2", "2"))
-        storageInternal.addUtxo(createUtxo("2", "3"))
+        storageInternal.addUtxo("2", 1, createUtxo("2", "2"))
+        storageInternal.addUtxo("2", 2, createUtxo("2", "3"))
         set = storageInternal.getUtxoAll()
 
         Assertions.assertEquals(set.size, 2)
@@ -204,9 +177,9 @@ class StorageInternalTest {
 
     @Test
     fun removeUtxo() {
-        storageInternal.addUtxo(createUtxo("1", "1"))
-        storageInternal.addUtxo(createUtxo("2", "2"))
-        storageInternal.addUtxo(createUtxo("2", "3"))
+        storageInternal.addUtxo("1", 1, createUtxo("1", "1"))
+        storageInternal.addUtxo("2", 2, createUtxo("2", "2"))
+        storageInternal.addUtxo("2", 3, createUtxo("2", "3"))
         var set = storageInternal.getUtxoAll()
 
         Assertions.assertEquals(set.size, 3)
@@ -244,7 +217,7 @@ class StorageInternalTest {
     @Test
     fun block() {
         val list = ArrayList<Transaction>()
-        val transaction  = Transaction()
+        val transaction = Transaction()
         list.add(transaction)
         val block = Block(10, list, Date().time, "123123", 0, 1001000);
 

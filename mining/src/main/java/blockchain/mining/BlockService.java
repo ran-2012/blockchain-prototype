@@ -179,7 +179,7 @@ public class BlockService {
                 return;
             }
 
-            Block lastBlock =  storage.getLastBlock();
+            Block lastBlock = storage.getLastBlock();
             if (!block.getPrevHash().equals(lastBlock.getHash())) {
                 log.error("Invalid block: previous hash mismatch");
                 return;
@@ -203,10 +203,10 @@ public class BlockService {
         private void revertBlock(String hash) {
             // TODO: Revert block, remove block data; add transaction back to the pool
             // Delete block data
-            storage.removeBlockByHash(hash);
+            Block block = storage.getBlock(hash);
+            storage.removeBlock(hash);
 
             // Add transactions back into the pool
-            Block block = storage.getBlock(hash);
             if (block != null) {
                 List<Transaction> transactions = block.getData();
                 for (Transaction transaction : transactions) {
@@ -249,9 +249,9 @@ public class BlockService {
         @Override
         public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
             // TODO: query utxo list and generate a transaction (or reject this transaction)
-            Set<Utxo> utxoList = storage.getUtxoByAddress(sourceAddress);
+            Set<TransactionOutput> utxoList = storage.getUtxoByAddress(sourceAddress);
             long balance = 0L;
-            for (Utxo utxo : utxoList) {
+            for (TransactionOutput utxo : utxoList) {
                 balance += utxo.getValue();
             }
             if (balance < value) {

@@ -2,7 +2,7 @@ package blockchain.storage
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
-import blockchain.data.core.Utxo
+import blockchain.data.core.TransactionOutput
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Sorts
 import kotlinx.coroutines.flow.single
@@ -62,7 +62,7 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun removeBlockByHash(hash: String) {
+    override fun removeBlock(hash: String) {
         runBlocking {
             client.block().deleteOne(Filters.eq(DataBaseClient.FIELD_HASH, hash))
         }
@@ -83,7 +83,9 @@ class StorageInternal(dbName: String) : IStorage {
     override fun getBlockAll(): MutableMap<Long, Block> {
         val map = HashMap<Long, Block>()
         runBlocking {
-            updateBlockMap(map, client.block().find().single())
+            client.block().find().collect {
+                updateBlockMap(map, it)
+            }
         }
         return map
     }
@@ -142,31 +144,70 @@ class StorageInternal(dbName: String) : IStorage {
         return list
     }
 
-    override fun addUtxo(data: Utxo) {
-        redisClient.addUtxo(data)
+    fun addUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
+        redisClient.normal.addUtxo("$transactionId:$outputIdx", data)
     }
 
-    override fun removeUtxo(data: Utxo) {
-        redisClient.removeUtxo(data)
+    fun removeUtxo(address: String, utxoId: String) {
+        redisClient.normal.removeUtxo(address, utxoId)
     }
 
-    override fun getUtxoByAddress(address: String): Set<Utxo> {
-        return redisClient.getUtxo(address)
+    override fun addUtxoFromTransactionOutput(transaction: Transaction) {
+        transaction.outputs.forEachIndexed { i, output ->
+            addUtxo(transaction.txId, i, output)
+        }
+    }
+
+    override fun removeUtxoFromTransactionInput(transaction: Transaction) {
+        val address = transaction.sourceAddress
+        transaction.inputs.forEach{ input ->
+            removeUtxo(address, "${input.originalTxId}:${input.originalOutputIndex}")
+        }
+    }
+
+    override fun getUtxoByAddress(address: String): Set<TransactionOutput> {
+        return redisClient.normal.getUtxo(address)
     }
 
     override fun getAddressAll(): Set<String> {
-        return redisClient.getAddressAll()
+        return redisClient.normal.getAddressAll()
     }
 
-    override fun getUtxoAll(): Set<Utxo> {
-        return redisClient.getUtxoAll()
+    override fun getUtxoAll(): Set<TransactionOutput> {
+        return redisClient.normal.getUtxoAll()
     }
+
+    private fun addPendingUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
+        redisClient.pending.addUtxo("$transactionId:$outputIdx", data)
+    }
+
+    private fun removePendingUtxo(address: String, utxoId: String) {
+        redisClient.pending.removeUtxo(address, utxoId)
+    }
+
+    override fun addPendingUtxoFromTransactionOutput(transaction: Transaction) {
+        transaction.outputs.forEachIndexed { i, output ->
+            addPendingUtxo(transaction.txId, i, output)
+        }
+    }
+
+    override fun removePendingUtxoFromTransactionInput(transaction: Transaction) {
+        val address = transaction.sourceAddress
+        transaction.inputs.forEach { input ->
+            removePendingUtxo(address, "${input.originalTxId}:${input.originalOutputIndex}")
+        }
+    }
+
+    override fun getPendingUtxoAll(): Set<TransactionOutput> {
+        return redisClient.pending.getUtxoAll()
+    }
+
 
     override fun setHeight(height: Long) {
-        redisClient.setHeight(height)
+        redisClient.normal.setHeight(height)
     }
 
     override fun getHeight(): Long {
-        return redisClient.getHeight()
+        return redisClient.normal.getHeight()
     }
 }

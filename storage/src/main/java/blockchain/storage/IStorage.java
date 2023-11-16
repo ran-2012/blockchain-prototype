@@ -2,7 +2,7 @@ package blockchain.storage;
 
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
-import blockchain.data.core.Utxo;
+import blockchain.data.core.TransactionOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -15,7 +15,7 @@ public interface IStorage {
 
     void removeBlockByHeight(long height);
 
-    void removeBlockByHash(String hash);
+    void removeBlock(String hash);
 
     void removeBlockByHashRange(List<String> hashes);
 
@@ -48,15 +48,21 @@ public interface IStorage {
 
     List<Transaction> getTransactionAll(String sourceAddress);
 
-    void addUtxo(Utxo data);
+    void addUtxoFromTransactionOutput(Transaction transaction);
 
-    void removeUtxo(Utxo data);
+    void removeUtxoFromTransactionInput(Transaction transaction);
 
-    Set<Utxo> getUtxoByAddress(String address);
+    Set<TransactionOutput> getUtxoByAddress(String address);
 
     Set<String> getAddressAll();
 
-    Set<Utxo> getUtxoAll();
+    Set<TransactionOutput> getUtxoAll();
+
+    void addPendingUtxoFromTransactionOutput(Transaction transaction);
+
+    void removePendingUtxoFromTransactionInput(Transaction transaction);
+
+    Set<TransactionOutput> getPendingUtxoAll();
 
     void setHeight(long height);
 
