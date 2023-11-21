@@ -143,11 +143,7 @@ public class BlockService {
         //TODO:set nonce
         block.setNonce(0);
         block.setHeight(storage.getLastBlock().getHeight() + 1); // Set the block height to the previous block's height plus one
-        try {
-            block.setHash(Hash.hashString(block.toString()));
-        } catch (NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
+        block.setHash(Hash.hashString(block.toString()));
         return block;
     }
 
@@ -245,17 +241,17 @@ public class BlockService {
 
         @Override
         public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
-            // TODO: query utxo list and generate a transaction (or reject this transaction)
-            Set<TransactionOutput> utxoList = storage.getUtxoByAddress(sourceAddress);
+            Set<TransactionInput> utxoList = storage.getUtxoByAddress(sourceAddress);
             long balance = 0L;
-            for (TransactionOutput utxo : utxoList) {
+            for (TransactionInput utxo : utxoList) {
                 balance += utxo.getValue();
             }
             if (balance < value) {
                 // Reject the transaction if the source address does not have enough funds
-                return null;
+                throw new RuntimeException("Not enough balance in " + sourceAddress);
             }
 
+            List<TransactionInput> userUtxoList = new ArrayList<>();
             // Generate a new transaction
             Transaction transaction = new Transaction();
             // TODO: get utxo list and generate input and output

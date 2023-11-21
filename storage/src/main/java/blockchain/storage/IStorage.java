@@ -2,6 +2,7 @@ package blockchain.storage;
 
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
+import blockchain.data.core.TransactionInput;
 import blockchain.data.core.TransactionOutput;
 import org.jetbrains.annotations.Nullable;
 
@@ -52,7 +53,7 @@ public interface IStorage {
 
     void removeUtxoFromTransactionInput(Transaction transaction);
 
-    Set<TransactionOutput> getUtxoByAddress(String address);
+    Set<TransactionInput> getUtxoByAddress(String address);
 
     Set<String> getAddressAll();
 

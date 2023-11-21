@@ -1,5 +1,6 @@
 package blockchain.storage
 
+import blockchain.data.core.TransactionInput
 import blockchain.data.core.TransactionOutput
 import com.google.gson.Gson
 import org.jetbrains.annotations.TestOnly
@@ -66,25 +67,30 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
             jedis.srem(addPrefix(key), value)
         }
 
-        fun addUtxo(utxoId: String, utxo: TransactionOutput) {
-            val address = utxo.publicKey
+        fun addUtxo(transactionId: String, outputIdx: Int, utxo: TransactionOutput) {
+            val address = utxo.address
             val utxoStr = gson.toJson(utxo)
 
+            val utxoId = "$transactionId:$outputIdx"
             jedis.set(addPrefix(PREFIX_UTXO, utxoId), utxoStr)
-            jedis.sadd(addPrefix(PREFIX_ADDRESS, address), utxoStr)
+            jedis.sadd(addPrefix(PREFIX_ADDRESS, address), utxoId)
             jedis.sadd(addPrefix(PREFIX_ADDRESS, "ALL"), address)
         }
 
-        fun removeUtxo(address: String, utxoId: String) {
+        fun removeUtxo(address: String, transactionId: String, outputIdx: Int) {
+            val utxoId = "$transactionId:$outputIdx"
             jedis.del(addPrefix(PREFIX_UTXO, utxoId))
             jedis.srem(addPrefix(PREFIX_ADDRESS, address), utxoId)
         }
 
-        fun getUtxo(address: String): Set<TransactionOutput> {
+        fun getUtxo(address: String): Set<TransactionInput> {
             val set = jedis.smembers(addPrefix(PREFIX_ADDRESS, address)) ?: HashSet()
-            val result = HashSet<TransactionOutput>()
+            val result = HashSet<TransactionInput>()
             for (str in set) {
-                val utxo = gson.fromJson(str, TransactionOutput::class.java)
+                val utxo = gson.fromJson(str, TransactionInput::class.java)
+                val utxoIdSplit = str.split(":")
+                utxo.originalTxHash = utxoIdSplit[0]
+                utxo.originalOutputIndex = utxoIdSplit[1].toInt()
                 result.add(utxo)
             }
             return result

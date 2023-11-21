@@ -2,6 +2,7 @@ package blockchain.storage
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
+import blockchain.data.core.TransactionInput
 import blockchain.data.core.TransactionOutput
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Sorts
@@ -144,12 +145,12 @@ class StorageInternal(dbName: String) : IStorage {
         return list
     }
 
-    fun addUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
-        redisClient.normal.addUtxo("$transactionId:$outputIdx", data)
+    private fun addUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
+        redisClient.normal.addUtxo(transactionId, outputIdx, data)
     }
 
-    fun removeUtxo(address: String, utxoId: String) {
-        redisClient.normal.removeUtxo(address, utxoId)
+    private fun removeUtxo(address: String, transactionId: String, outputIdx: Int) {
+        redisClient.normal.removeUtxo(address, transactionId, outputIdx)
     }
 
     override fun addUtxoFromTransactionOutput(transaction: Transaction) {
@@ -160,12 +161,12 @@ class StorageInternal(dbName: String) : IStorage {
 
     override fun removeUtxoFromTransactionInput(transaction: Transaction) {
         val address = transaction.sourceAddress
-        transaction.inputs.forEach{ input ->
-            removeUtxo(address, "${input.originalTxHash}:${input.originalOutputIndex}")
+        transaction.inputs.forEach { input ->
+            removeUtxo(address, input.originalTxHash, input.originalOutputIndex)
         }
     }
 
-    override fun getUtxoByAddress(address: String): Set<TransactionOutput> {
+    override fun getUtxoByAddress(address: String): Set<TransactionInput> {
         return redisClient.normal.getUtxo(address)
     }
 
@@ -178,11 +179,11 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     private fun addPendingUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
-        redisClient.pending.addUtxo("$transactionId:$outputIdx", data)
+        redisClient.pending.addUtxo(transactionId, outputIdx, data)
     }
 
-    private fun removePendingUtxo(address: String, utxoId: String) {
-        redisClient.pending.removeUtxo(address, utxoId)
+    private fun removePendingUtxo(address: String, transactionId: String, outputIdx: Int) {
+        redisClient.pending.removeUtxo(address, transactionId, outputIdx)
     }
 
     override fun addPendingUtxoFromTransactionOutput(transaction: Transaction) {
@@ -194,7 +195,7 @@ class StorageInternal(dbName: String) : IStorage {
     override fun removePendingUtxoFromTransactionInput(transaction: Transaction) {
         val address = transaction.sourceAddress
         transaction.inputs.forEach { input ->
-            removePendingUtxo(address, "${input.originalTxHash}:${input.originalOutputIndex}")
+            removePendingUtxo(address, input.originalTxHash, input.originalOutputIndex)
         }
     }
 
