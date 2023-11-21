@@ -180,8 +180,9 @@ public class Rsa {
     }
 
     public static String sign(String data, String privateKey) {
+
         try {
-            return sign(data.getBytes(), privateKey.getBytes(), "RSA2");
+            return sign(data.getBytes(), Hex.toBytes(privateKey), "RSA2");
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -217,6 +218,18 @@ public class Rsa {
         signature.update(data);
         //得到验证结果
         return signature.verify(sign);
+    }
+
+    public static boolean verify(String data, String sign, String publicKey) {
+        try {
+            return verify(data.getBytes(), Hex.toBytes(sign), Hex.toBytes(publicKey), "RSA2");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static boolean verify(Object data, String sign, String publicKey) {
+        return verify(Json.toJson(data), sign, publicKey);
     }
 }
 

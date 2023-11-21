@@ -3,6 +3,7 @@ package blockchain.storage
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
 import blockchain.data.core.TransactionInput
+import blockchain.data.core.TransactionInputOutputBase
 import blockchain.data.core.TransactionOutput
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Sorts
@@ -166,6 +167,10 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
+    override fun hasUtxo(utxo: TransactionInput): Boolean {
+        return redisClient.normal.exists("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
+    }
+
     override fun getUtxoByAddress(address: String): Set<TransactionInput> {
         return redisClient.normal.getUtxo(address)
     }
@@ -178,7 +183,7 @@ class StorageInternal(dbName: String) : IStorage {
         return redisClient.normal.getUtxoAll()
     }
 
-    private fun addPendingUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
+    private fun addPendingUtxo(transactionId: String, outputIdx: Int, data: TransactionInputOutputBase) {
         redisClient.pending.addUtxo(transactionId, outputIdx, data)
     }
 
@@ -186,9 +191,9 @@ class StorageInternal(dbName: String) : IStorage {
         redisClient.pending.removeUtxo(address, transactionId, outputIdx)
     }
 
-    override fun addPendingUtxoFromTransactionOutput(transaction: Transaction) {
-        transaction.outputs.forEachIndexed { i, output ->
-            addPendingUtxo(transaction.hash, i, output)
+    override fun addPendingUtxoFromTransactionInput(transaction: Transaction) {
+        transaction.inputs.forEachIndexed { i, input ->
+            addPendingUtxo(input.originalTxHash, input.originalOutputIndex, input)
         }
     }
 
@@ -197,6 +202,10 @@ class StorageInternal(dbName: String) : IStorage {
         transaction.inputs.forEach { input ->
             removePendingUtxo(address, input.originalTxHash, input.originalOutputIndex)
         }
+    }
+
+    override fun hasPendingUtxo(utxo: TransactionInput): Boolean {
+        return redisClient.pending.exists("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
     }
 
     override fun getPendingUtxoAll(): Set<TransactionOutput> {

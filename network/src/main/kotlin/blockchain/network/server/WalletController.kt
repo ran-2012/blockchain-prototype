@@ -1,6 +1,7 @@
 package blockchain.network.server
 
 import blockchain.data.core.Transaction
+import blockchain.data.core.TransactionInput
 import blockchain.data.core.TransactionOutput
 import blockchain.network.INetwork
 import blockchain.network.core.WalletService
@@ -39,7 +40,7 @@ class WalletController(coroutineContext: CoroutineScope, callback: INetwork.Call
         }
     }
 
-    override suspend fun getUtxo(address: String): List<TransactionOutput> {
+    override suspend fun getUtxo(address: String): List<TransactionInput> {
         // Processed by storage module directly
         return Storage.getInstance().getUtxoByAddress(address).toList()
     }

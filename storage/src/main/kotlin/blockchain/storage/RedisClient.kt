@@ -1,6 +1,7 @@
 package blockchain.storage
 
 import blockchain.data.core.TransactionInput
+import blockchain.data.core.TransactionInputOutputBase
 import blockchain.data.core.TransactionOutput
 import com.google.gson.Gson
 import org.jetbrains.annotations.TestOnly
@@ -39,6 +40,11 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
             return result.removeSuffix(":")
         }
 
+
+        fun exists(key: String): Boolean {
+            return jedis.exists(addPrefix(key))
+        }
+
         fun get(): Jedis {
             return jedis
         }
@@ -67,7 +73,7 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
             jedis.srem(addPrefix(key), value)
         }
 
-        fun addUtxo(transactionId: String, outputIdx: Int, utxo: TransactionOutput) {
+        fun addUtxo(transactionId: String, outputIdx: Int, utxo: TransactionInputOutputBase) {
             val address = utxo.address
             val utxoStr = gson.toJson(utxo)
 

@@ -53,15 +53,19 @@ public interface IStorage {
 
     void removeUtxoFromTransactionInput(Transaction transaction);
 
+    boolean hasUtxo(TransactionInput utxo);
+
     Set<TransactionInput> getUtxoByAddress(String address);
 
     Set<String> getAddressAll();
 
     Set<TransactionOutput> getUtxoAll();
 
-    void addPendingUtxoFromTransactionOutput(Transaction transaction);
+    void addPendingUtxoFromTransactionInput(Transaction transaction);
 
     void removePendingUtxoFromTransactionInput(Transaction transaction);
+
+    boolean hasPendingUtxo(TransactionInput utxo);
 
     Set<TransactionOutput> getPendingUtxoAll();
 

@@ -16,8 +16,8 @@ import blockchain.storage.IStorage;
 import blockchain.storage.Storage;
 import blockchain.utility.Hash;
 import blockchain.utility.Log;
+import blockchain.utility.Rsa;
 
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -26,6 +26,7 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+@SuppressWarnings("FieldCanBeLocal")
 public class BlockService {
 
     Log log = Log.get(this);
@@ -51,9 +52,8 @@ public class BlockService {
             List<Transaction> list = pollTransaction();
             Block block = generateNewBlock(list);
             startMining(block);
-        } else {
-            scheduleCheckTransactionPool();
         }
+        scheduleCheckTransactionPool();
     };
 
     public BlockService(boolean startMining) {
@@ -105,27 +105,10 @@ public class BlockService {
 
 
         for (Transaction transaction : pool) {
-            if (isValidTransaction(transaction)) {
-                list.add(transaction);
-            }
+            // No check here, all transaction is checked before adding to pool
+//            list.add(transaction);
         }
         return list;
-    }
-
-    private boolean isValidTransaction(Transaction transaction) {
-        // TODO: Implement validation logic
-        // Check if inputs are valid
-
-        // Check if outputs are valid
-        double inputSum = transaction.getInputs().stream().mapToDouble(TransactionInput::getValue).sum();
-        double outputSum = transaction.getOutputs().stream().mapToDouble(TransactionOutput::getValue).sum();
-        if (inputSum < outputSum) {
-            // The outputs exceed the inputs
-            return false;
-        }
-
-        // The transaction is valid
-        return true;
     }
 
     private Block generateNewBlock(List<Transaction> transactions) {
@@ -150,6 +133,34 @@ public class BlockService {
     private void startMining(Block block) {
         miningService.setBlock(block);
         miningService.start();
+    }
+
+    private boolean checkUtxo(Transaction transaction) {
+        for (TransactionInput input : transaction.inputs) {
+            if (!storage.hasUtxo(input)) {
+                log.warn("Utxo {} is already in use", input);
+                return false;
+            }
+        }
+        return true;
+    }
+
+    private boolean checkSignature(Transaction transaction) {
+        for (TransactionInput input : transaction.inputs) {
+            String signature = input.signature;
+            input.signature = "";
+            if (!Rsa.verify(input, signature, input.publicKey)) {
+                input.signature = signature;
+                log.warn("Fail to verify input {}", input);
+                return false;
+            }
+            input.signature = signature;
+        }
+        if (!Rsa.verify(transaction.outputHash, transaction.outputSignature, transaction.sourcePublicKey)) {
+            log.warn("Failed to verify output");
+            return false;
+        }
+        return true;
     }
 
     /**
@@ -184,17 +195,30 @@ public class BlockService {
         }
 
         private void addNewTransaction(Transaction transaction) {
-            // TODO: Check Transaction and add the transaction of new block into the pool
-            // TODO: Remove UTXO used in this transaction
-            if (isValidTransaction(transaction)) {
-                storage.addTransaction(transaction);
-            } else {
-                log.error("Invalid transaction: " + transaction);
+            log.info("New transaction received from {} to {}", transaction.sourceAddress, transaction.targetAddress);
+            // Transaction may come from user and the hash is not updated
+            transaction.updateHash();
+
+            try {
+                if (!checkUtxo(transaction)) {
+                    log.warn("Invalid input list");
+                    return;
+                }
+                if (!checkSignature(transaction)) {
+                    log.warn("Transaction verification failed");
+                    return;
+                }
+            } catch (Exception e) {
+                log.error(e);
+                return;
             }
+
+            storage.removeUtxoFromTransactionInput(transaction);
+            storage.addPendingUtxoFromTransactionInput(transaction);
+            storage.addTransaction(transaction);
         }
 
         private void revertBlock(String hash) {
-            // TODO: Revert block, remove block data; add transaction back to the pool
             // Delete block data
             Block block = storage.getBlock(hash);
             storage.removeBlock(hash);
@@ -203,27 +227,23 @@ public class BlockService {
             if (block != null) {
                 List<Transaction> transactions = block.getData();
                 for (Transaction transaction : transactions) {
+                    storage.addPendingUtxoFromTransactionInput(transaction);
                     storage.addTransaction(transaction);
                 }
-
-                // TODO: Blocks in previous height may also need to revert, remember to check them
+                // TODO: Check all utxo in the reverted block and remove them and transactions use these utxo
             }
         }
-
-
     }
 
     private final MiningService.Callback callback = new MiningService.Callback() {
         @Override
         public void onNewBlockMined(Block block) {
             addNewBlock(block);
-            //TODO: Broadcast the new block
             network.newBlock(block);
         }
 
         @Override
         public void onAllNonceTried(Block block) {
-            // TODO: ues new timestamp then start mining again
             block.setTimestamp(new Date().getTime());
             miningService.setBlock(block);
             miningService.start();
@@ -242,30 +262,45 @@ public class BlockService {
         @Override
         public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
             Set<TransactionInput> utxoList = storage.getUtxoByAddress(sourceAddress);
-            long balance = 0L;
+            List<TransactionInput> inputList = new ArrayList<>();
+            List<TransactionOutput> outputList = new ArrayList<>();
+
+            long totalValue = 0L;
             for (TransactionInput utxo : utxoList) {
-                balance += utxo.getValue();
+                totalValue += utxo.getValue();
+                inputList.add(utxo);
+                if (totalValue >= value) {
+                    break;
+                }
             }
-            if (balance < value) {
+            if (totalValue < value) {
                 // Reject the transaction if the source address does not have enough funds
                 throw new RuntimeException("Not enough balance in " + sourceAddress);
             }
 
-            List<TransactionInput> userUtxoList = new ArrayList<>();
+            // To targetAddress
+            TransactionOutput output1 = new TransactionOutput(targetAddress, value);
+            outputList.add(output1);
+
+            if (totalValue > value) {
+                // Send back additional money back
+                TransactionOutput output2 = new TransactionOutput(sourceAddress, totalValue - value);
+                outputList.add(output2);
+            }
             // Generate a new transaction
-            Transaction transaction = new Transaction();
-            // TODO: get utxo list and generate input and output
-//            transaction.sign();
+            Transaction transaction = new Transaction(inputList, outputList);
+            transaction.sourceAddress = sourceAddress;
+            transaction.targetAddress = targetAddress;
 
-            // Add the transaction to the transaction pool
-            addNewTransaction(transaction);
+            log.info("Generate new transaction from: {}, to: {}, value: {}", sourceAddress, targetAddress, value);
 
-            // Return the new transaction
+            // Return the new transaction to the client
             return transaction;
         }
 
         @Override
         public void onSignedTransactionReceived(Transaction transaction) {
+            // verification is in Internal.addNewTransaction
             addNewTransaction(transaction);
         }
     };

@@ -1,6 +1,7 @@
 package blockchain.network.core
 
 import blockchain.data.core.Transaction
+import blockchain.data.core.TransactionInput
 import blockchain.data.core.TransactionOutput
 import retrofit2.http.Body
 import retrofit2.http.GET
@@ -20,7 +21,7 @@ interface WalletService {
     suspend fun newTransaction(@Body transaction: Transaction)
 
     @GET(Companion.UTXO)
-    suspend fun getUtxo(@Query(PARAM_ADDRESS) address: String): List<TransactionOutput>
+    suspend fun getUtxo(@Query(PARAM_ADDRESS) address: String): List<TransactionInput>
 
     companion object {
         const val TRANSACTION = "transaction"

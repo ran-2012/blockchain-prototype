@@ -2,7 +2,7 @@ package blockchain.data.core;
 
 import blockchain.utility.Json;
 
-class TransactionInputOutputBase {
+public class TransactionInputOutputBase {
 
     public String address;
     public long value;

@@ -159,9 +159,9 @@ public class Cli {
     public int balance(@Parameters(paramLabel = "ADDRESS INDEX") int addressIndex) {
         String sourceAddress = config.list.get(addressIndex).pk;
         try {
-            List<TransactionOutput> list = client.getUtxoList(sourceAddress);
+            List<TransactionInput> list = client.getUtxoList(sourceAddress);
             long balance = 0;
-            for (TransactionOutput utxo : list) {
+            for (TransactionInput utxo : list) {
 
                 balance += utxo.getValue();
             }
