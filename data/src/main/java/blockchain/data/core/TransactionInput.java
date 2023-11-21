@@ -2,28 +2,20 @@ package blockchain.data.core;
 
 public class TransactionInput extends TransactionInputOutputBase {
 
-    public String originalTxId;
-    public int originalOutputIndex;
-    public String signature;
+    public String originalTxHash = "";
+    public int originalOutputIndex = 0;
+    public String signature = "";
+    public String publicKey = "";
 
-    public TransactionInput(String originalTxId, int originalOutputIndex, String publicKey, long value, String signature) {
-        super(publicKey, value);  // todo delete this
-        this.originalTxId = originalTxId;
-        this.originalOutputIndex = originalOutputIndex;
-        this.signature = signature;
+    public TransactionInput() {
+        super("", 0);
     }
 
-    public TransactionInput(String originalTxId, int originalOutputIndex, String publicKey, String publicKeyHash, long value, String signature) {
-        super(publicKey, publicKeyHash, value);  // todo delete
-        this.originalTxId = originalTxId;
+    public TransactionInput(String address, long value, String originalTxHash, int originalOutputIndex, String publicKey, String signature) {
+        super(address, value);
+        this.publicKey = publicKey;
+        this.originalTxHash = originalTxHash;
         this.originalOutputIndex = originalOutputIndex;
         this.signature = signature;
-    }
-
-    @Override
-    public String contentString() {
-        return "originalTxId=".concat(originalTxId).concat(",originalOutputIndex=").
-                concat(Integer.toString(originalOutputIndex)).concat("publicKey=").
-                concat(publicKey).concat(",value=").concat(Long.toString(value));  // todo add publicKeyHash
     }
 }

@@ -9,7 +9,6 @@ import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 import blockchain.data.core.TransactionInput;
 import blockchain.data.core.TransactionOutput;
-import blockchain.data.core.Utxo;
 import blockchain.data.exceptions.AlreadyMinedException;
 import blockchain.network.INetwork;
 import blockchain.network.Network;
@@ -30,6 +29,11 @@ import java.util.concurrent.TimeUnit;
 public class BlockService {
 
     Log log = Log.get(this);
+
+
+    public static long CHECK_TRANSACTION_POOL_INTERVAL = 1000;
+
+    public static long TARGET_TIME = 10_000;
 
     private final IStorage storage = Storage.getInstance();
     private final INetwork network = Network.getInstance();
@@ -73,15 +77,8 @@ public class BlockService {
     }
 
     private void scheduleCheckTransactionPool() {
-        executor.schedule(checkTransactionPoolRunnable, 1, TimeUnit.SECONDS);
+        executor.schedule(checkTransactionPoolRunnable, CHECK_TRANSACTION_POOL_INTERVAL, TimeUnit.MILLISECONDS);
     }
-
-    /**
-     * Check if it has enough transaction to start mining.
-     *
-     * @return True: You can start mining now
-     */
-
 
     /**
      * 现有问题：1.需要一个能获取当前block的函数，不是正在挖的，而是链上最后一个高度上面的block

@@ -1,7 +1,7 @@
 package blockchain.wallet
 
 import blockchain.data.core.Transaction
-import blockchain.data.core.Utxo
+import blockchain.data.core.TransactionOutput
 import blockchain.network.client.HttpClient
 import kotlinx.coroutines.runBlocking
 
@@ -20,7 +20,7 @@ class HttpClientWrapper(url: String) {
         }
     }
 
-    fun getUtxoList(sourceAddress: String): List<Utxo> {
+    fun getUtxoList(sourceAddress: String): List<TransactionOutput> {
         return runBlocking {
             httpClient.walletService.getUtxo(sourceAddress)
         }

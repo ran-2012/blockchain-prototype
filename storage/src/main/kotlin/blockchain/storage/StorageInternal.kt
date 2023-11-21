@@ -154,14 +154,14 @@ class StorageInternal(dbName: String) : IStorage {
 
     override fun addUtxoFromTransactionOutput(transaction: Transaction) {
         transaction.outputs.forEachIndexed { i, output ->
-            addUtxo(transaction.txId, i, output)
+            addUtxo(transaction.hash, i, output)
         }
     }
 
     override fun removeUtxoFromTransactionInput(transaction: Transaction) {
         val address = transaction.sourceAddress
         transaction.inputs.forEach{ input ->
-            removeUtxo(address, "${input.originalTxId}:${input.originalOutputIndex}")
+            removeUtxo(address, "${input.originalTxHash}:${input.originalOutputIndex}")
         }
     }
 
@@ -187,21 +187,20 @@ class StorageInternal(dbName: String) : IStorage {
 
     override fun addPendingUtxoFromTransactionOutput(transaction: Transaction) {
         transaction.outputs.forEachIndexed { i, output ->
-            addPendingUtxo(transaction.txId, i, output)
+            addPendingUtxo(transaction.hash, i, output)
         }
     }
 
     override fun removePendingUtxoFromTransactionInput(transaction: Transaction) {
         val address = transaction.sourceAddress
         transaction.inputs.forEach { input ->
-            removePendingUtxo(address, "${input.originalTxId}:${input.originalOutputIndex}")
+            removePendingUtxo(address, "${input.originalTxHash}:${input.originalOutputIndex}")
         }
     }
 
     override fun getPendingUtxoAll(): Set<TransactionOutput> {
         return redisClient.pending.getUtxoAll()
     }
-
 
     override fun setHeight(height: Long) {
         redisClient.normal.setHeight(height)

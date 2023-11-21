@@ -1,5 +1,9 @@
 package blockchain.data.core;
 
+import blockchain.utility.Hash;
+import blockchain.utility.Json;
+import org.jetbrains.annotations.TestOnly;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -9,20 +13,17 @@ import java.util.Base64;
 
 public class Transaction {
 
-    /**
-     * Transaction hash（txid）
-     */
-    public String hash; //todo rename hash to txId
+    public String hash;
 
-    String txId;
+    public ArrayList<TransactionInput> inputs = new ArrayList<>();
+    public ArrayList<TransactionOutput> outputs = new ArrayList<>();
 
-    ArrayList<TransactionInput> inputs = new ArrayList<>();
-    ArrayList<TransactionOutput> outputs = new ArrayList<>();
+    public String outputHash = "";
+    public String outputSignature = "";
+    public long fee;
+    public long timestamp;
 
-    long fee;
-    long timestamp;
-
-    boolean coinbase;
+    public boolean coinbase;
 
     /**
      * Address of transaction initiator
@@ -35,9 +36,8 @@ public class Transaction {
         outputs.add(coinbaseOutput);
         this.timestamp = System.currentTimeMillis();
         this.coinbase = true;
-        this.fee = 0;  // todo the fee of the coinbase transaction itself is set to zero, the total fee of the block is the sum of the fees of all the other transactions
-        this.txId = calculateHash();
-        this.hash = calculateHash();  // todo delete this line
+        this.fee = 0;
+        this.hash = calculateHash();
     }
 
     public Transaction(ArrayList<TransactionInput> txInputs, ArrayList<TransactionOutput> txOutputs) {
@@ -45,64 +45,37 @@ public class Transaction {
         this.outputs = txOutputs;
         this.timestamp = System.currentTimeMillis();
         this.coinbase = false;
+        this.outputHash = Hash.hashString(this.outputs);
         this.fee = calculateFee();
-        this.txId = calculateHash();
-        this.hash = calculateHash();  // todo delete this line
+        this.hash = calculateHash();
     }
 
-
-
-    public Transaction() {  // todo delete this
-        // this.hash = "";
-        this.sourceAddress = "";  // todo test
+    public Transaction() {
         this.timestamp = System.currentTimeMillis();
         this.hash = calculateHash();
     }
 
-    public Transaction(String hash, String sourceAddress) {// todo delete this
-        // this.hash = hash;  // todo
-        this.sourceAddress = sourceAddress; // todo test
-        this.timestamp = System.currentTimeMillis();
-        this.hash = calculateHash();
-    }
-
-    public Transaction(String hash, ArrayList<TransactionInput> inputs, ArrayList<TransactionOutput> outputs) {// todo delete this
-        // this.hash = hash;  // todo
-        this.inputs = inputs;
-        this.outputs = outputs;
+    @TestOnly
+    public Transaction(String hash) {
+        this.hash = hash;
         this.timestamp = System.currentTimeMillis();
         this.hash = calculateHash();
     }
 
     public String toString() {
-        String str = "";
-        if (inputs != null ) {  // if this transaction is a coinbase transaction, inputs == null
-            for (TransactionInput txIn : inputs) {
-                str = str.concat("input={").concat(txIn.contentString()).concat("}.");  // todo test
-            }
-        }
-        for (TransactionOutput txOut : outputs) {
-            str = str.concat("output={").concat(txOut.contentString()).concat("}.");
-        }
-        str = str.concat("timestamp=").concat(Long.toString(timestamp));
-        return str;
+        return Json.toJson(this);
     }
 
     public String calculateHash() {
-        MessageDigest digest = null;
         try {
+            MessageDigest digest = null;
             digest = MessageDigest.getInstance("SHA-256");
-        } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace();
-        }
-        if (digest != null) {
             byte[] hash1 = digest.digest(this.toString().getBytes(StandardCharsets.UTF_8));
-            byte[] hash2 = digest.digest(hash1);  // todo test
+            byte[] hash2 = digest.digest(hash1);
             return Base64.getEncoder().encodeToString(hash2);
-        } else {
-            return "";
+        } catch (NoSuchAlgorithmException ignored) {
         }
-
+        return "";
     }
 
     public long calculateFee() {
@@ -113,7 +86,7 @@ public class Transaction {
         for (TransactionOutput txOut : outputs) {
             fee = fee - txOut.getValue();
         }
-        return fee;  // todo fee < 0 error
+        return fee;
     }
 
     public String getHash() {
@@ -122,14 +95,6 @@ public class Transaction {
 
     public void setHash(String hash) {
         this.hash = hash;
-    }
-
-    public String getTxId() {
-        return txId;
-    }
-
-    public void setTxId(String txId) {
-        this.txId = txId;
     }
 
     public ArrayList<TransactionInput> getInputs() {
@@ -170,13 +135,5 @@ public class Transaction {
 
     public void setCoinbase(boolean coinbase) {
         this.coinbase = coinbase;
-    }
-
-    public String getSourceAddress() {
-        return sourceAddress;
-    }
-
-    public void setSourceAddress(String sourceAddress) {
-        this.sourceAddress = sourceAddress;
     }
 }

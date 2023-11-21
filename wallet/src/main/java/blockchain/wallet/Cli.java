@@ -1,8 +1,10 @@
 package blockchain.wallet;
 
 import blockchain.data.core.Transaction;
-import blockchain.data.core.Utxo;
-import blockchain.network.client.HttpClient;
+import blockchain.data.core.TransactionInput;
+import blockchain.data.core.TransactionOutput;
+import blockchain.utility.Hash;
+import blockchain.utility.Log;
 import blockchain.utility.Rsa;
 import com.google.gson.Gson;
 import picocli.CommandLine.Command;
@@ -11,10 +13,11 @@ import picocli.CommandLine.Parameters;
 import java.io.*;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 @Command(name = "wallet")
 public class Cli {
+
+    private final Log log = Log.get(this);
 
     public static String CONFIG_NAME = "config.json";
 
@@ -54,9 +57,10 @@ public class Cli {
     @Command(name = "generate", description = {"Generate a new pair of keys"})
     public int generate() {
         Map<String, String> map = Rsa.generateKey();
-        Config.KeyPair pair = new Config.KeyPair();
+        Config.Pair pair = new Config.Pair();
         pair.pk = map.get("pk");
         pair.sk = map.get("sk");
+        pair.address = Hash.hashString(pair.pk);
         config.list.add(pair);
         saveConfig();
         return 0;
@@ -65,7 +69,7 @@ public class Cli {
     @Command(name = "list", description = {"List addresses"})
     public int list() {
         for (int i = 0; i < config.list.size(); ++i) {
-            Config.KeyPair pair = config.list.get(i);
+            Config.Pair pair = config.list.get(i);
             System.out.printf("%d. %s", i + 1, pair.pk.substring(0, 19));
         }
         return 0;
@@ -74,7 +78,7 @@ public class Cli {
     @Command(name = "add", description = {"Add existing key"})
     public int add(@Parameters(paramLabel = "SECRET KEY") String secretKey,
                    @Parameters(paramLabel = "PUBLIC KEY") String publicKey) {
-        Config.KeyPair pair = new Config.KeyPair();
+        Config.Pair pair = new Config.Pair();
         pair.sk = secretKey;
         pair.pk = publicKey;
         config.list.add(pair);
@@ -95,30 +99,76 @@ public class Cli {
     public int transfer(@Parameters(paramLabel = "SOURCE INDEX") int addressIndex,
                         @Parameters(paramLabel = "TARGET") String targetAddress,
                         @Parameters(paramLabel = "VALUE") long value) {
-        String sourceAddress = config.list.get(addressIndex).pk;
+
+        Config.Pair pair = config.list.get(addressIndex);
+        String sourceAddress = pair.address;
         try {
             Transaction transaction = client.getTransaction(sourceAddress, targetAddress, value);
-            // TODO: Sign transaction;
+            if (checkTransaction(sourceAddress, targetAddress, value, transaction)) {
+                signTransaction(sourceAddress, pair.pk, pair.sk, transaction);
+            }
             client.postSignedTransaction(transaction);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
+            throw e;
         }
         return 0;
+    }
+
+    private boolean checkTransaction(String sourceAddress, String targetAddress, long value, Transaction transaction) {
+        long inputValue = 0;
+        long outputValue = 0;
+        for (TransactionInput input : transaction.inputs) {
+            if (input.address.equals(sourceAddress)) {
+                inputValue += input.value;
+            }
+        }
+        for (TransactionOutput output : transaction.outputs) {
+            if (output.address.equals(sourceAddress)) {
+                inputValue -= output.value;
+            } else if (output.address.equals(targetAddress)) {
+                outputValue += output.value;
+            } else {
+                log.error("Output address not match");
+                return false;
+            }
+        }
+        if (inputValue > value * 1.1) {
+            log.error("Input value not match");
+            return false;
+        }
+        if (outputValue != value) {
+            log.error("Output value not match");
+            return false;
+        }
+        return true;
+    }
+
+    private void signTransaction(String address, String publicKey, String privateKey, Transaction transaction) {
+        for (TransactionInput input : transaction.inputs) {
+            if (input.address.equals(address)) {
+                input.publicKey = publicKey;
+                input.signature = "";
+                input.signature = Rsa.sign(input, privateKey);
+            }
+        }
+        transaction.outputSignature = Rsa.sign(transaction.outputHash, privateKey);
     }
 
     @Command(name = "balance", description = {"Query balance"})
     public int balance(@Parameters(paramLabel = "ADDRESS INDEX") int addressIndex) {
         String sourceAddress = config.list.get(addressIndex).pk;
         try {
-            List<Utxo> list = client.getUtxoList(sourceAddress);
+            List<TransactionOutput> list = client.getUtxoList(sourceAddress);
             long balance = 0;
-            for (Utxo utxo : list) {
+            for (TransactionOutput utxo : list) {
 
                 balance += utxo.getValue();
             }
             System.out.println(balance);
         } catch (Exception e) {
-            e.printStackTrace();
+            log.error(e.getMessage());
+            throw e;
         }
         return 0;
     }

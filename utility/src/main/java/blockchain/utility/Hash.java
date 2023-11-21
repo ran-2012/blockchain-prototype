@@ -1,5 +1,8 @@
 package blockchain.utility;
 
+import com.google.gson.Gson;
+
+import javax.management.RuntimeErrorException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HashMap;
@@ -14,13 +17,21 @@ public class Hash {
      * @return 哈希值
      * @throws NoSuchAlgorithmException 找不到 SHA-256 算法
      */
-    public static byte[] hash(String message) throws NoSuchAlgorithmException {
-        MessageDigest msgDig = MessageDigest.getInstance("SHA-256");
-        return msgDig.digest(message.getBytes());
+    public static byte[] hash(String message) {
+        try {
+            MessageDigest msgDig = MessageDigest.getInstance("SHA-256");
+            return msgDig.digest(message.getBytes());
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
     }
 
-    public static String hashString(String message) throws NoSuchAlgorithmException {
+    public static String hashString(String message) {
         return byteToString(hash(message));
+    }
+
+    public static String hashString(Object o) {
+        return byteToString(hash(Json.toJson(o)));
     }
 
     public static String byteToString(byte[] hashBytes) {

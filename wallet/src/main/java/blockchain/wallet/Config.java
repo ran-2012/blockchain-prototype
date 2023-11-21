@@ -5,12 +5,13 @@ import java.util.List;
 
 public class Config {
 
-    public List<KeyPair> list = new ArrayList<>();
+    public List<Pair> list = new ArrayList<>();
 
     public String nodeUrl = "http://localhost:7070";
 
-    public static class KeyPair {
+    public static class Pair {
         String pk;
         String sk;
+        String address;
     }
 }

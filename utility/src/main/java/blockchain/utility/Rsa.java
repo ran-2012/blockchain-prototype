@@ -1,6 +1,7 @@
 package blockchain.utility;
 
 import javax.crypto.Cipher;
+import java.nio.charset.Charset;
 import java.security.*;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
@@ -157,7 +158,7 @@ public class Rsa {
      * @return 签名
      * @throws Exception
      */
-    public static String sign(byte[] data, byte[] priKey, String signType) throws Exception {
+    private static String sign(byte[] data, byte[] priKey, String signType) throws Exception {
         //创建PKCS8编码密钥规范
         PKCS8EncodedKeySpec pkcs8KeySpec = new PKCS8EncodedKeySpec(priKey);
         //返回转换指定算法的KeyFactory对象
@@ -176,6 +177,18 @@ public class Rsa {
         byte[] sign = signature.sign();
         //返回Base64编码后的字符串
         return Base64.getEncoder().encodeToString(sign);
+    }
+
+    public static String sign(String data, String privateKey) {
+        try {
+            return sign(data.getBytes(), privateKey.getBytes(), "RSA2");
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public static String sign(Object o, String privateKey) {
+        return sign(Json.toJson(o), privateKey);
     }
 
     /**

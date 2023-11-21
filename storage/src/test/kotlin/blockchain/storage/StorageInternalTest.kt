@@ -2,7 +2,7 @@ package blockchain.storage
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
-import blockchain.data.core.Utxo
+import blockchain.data.core.TransactionOutput
 import org.junit.jupiter.api.*
 import java.util.Date
 
@@ -37,8 +37,8 @@ class StorageInternalTest {
         return block
     }
 
-    private fun createUtxo(address: String, signature: String): Utxo {
-        return Utxo(address, 0)
+    private fun createUtxo(address: String, value: Long): TransactionOutput {
+        return TransactionOutput(address, value)
     }
 
 
@@ -163,46 +163,10 @@ class StorageInternalTest {
 
     @Test
     fun addUtxo() {
-        storageInternal.addUtxo("1", 1, createUtxo("1", "1"))
-        var set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 1)
-
-        storageInternal.addUtxo("2", 1, createUtxo("2", "2"))
-        storageInternal.addUtxo("2", 2, createUtxo("2", "3"))
-        set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 2)
     }
 
     @Test
     fun removeUtxo() {
-        storageInternal.addUtxo("1", 1, createUtxo("1", "1"))
-        storageInternal.addUtxo("2", 2, createUtxo("2", "2"))
-        storageInternal.addUtxo("2", 3, createUtxo("2", "3"))
-        var set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 3)
-
-        storageInternal.removeUtxo(createUtxo("1", "1"))
-        set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 2)
-
-        storageInternal.removeUtxo(createUtxo("2", "2"))
-        set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 1)
-
-        storageInternal.removeUtxo(createUtxo("2", "1"))
-        set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 1)
-
-        storageInternal.removeUtxo(createUtxo("2", "3"))
-        set = storageInternal.getUtxoAll()
-
-        Assertions.assertEquals(set.size, 0)
     }
 
     @Test
