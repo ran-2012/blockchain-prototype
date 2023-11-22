@@ -179,7 +179,7 @@ class StorageInternal(dbName: String) : IStorage {
         return redisClient.normal.getAddressAll()
     }
 
-    override fun getUtxoAll(): Set<TransactionOutput> {
+    override fun getUtxoAll(): Set<TransactionInput> {
         return redisClient.normal.getUtxoAll()
     }
 
@@ -192,7 +192,7 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     override fun addPendingUtxoFromTransactionInput(transaction: Transaction) {
-        transaction.inputs.forEachIndexed { i, input ->
+        transaction.inputs.forEach { input ->
             addPendingUtxo(input.originalTxHash, input.originalOutputIndex, input)
         }
     }
@@ -208,7 +208,7 @@ class StorageInternal(dbName: String) : IStorage {
         return redisClient.pending.exists("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
     }
 
-    override fun getPendingUtxoAll(): Set<TransactionOutput> {
+    override fun getPendingUtxoAll(): Set<TransactionInput> {
         return redisClient.pending.getUtxoAll()
     }
 

@@ -46,7 +46,7 @@ class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callba
         return block.await()
     }
 
-    override suspend fun getBlockRange(min: Long, max: Long): Map<Long, List<Block>> {
+    override suspend fun getBlockRange(min: Long, max: Long): Map<Long,Block> {
         val result = scope.async {
             try {
                 Storage.getInstance().getBlockRange(min, max)

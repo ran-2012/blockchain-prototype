@@ -35,7 +35,7 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
         private fun addPrefix(vararg key: String): String {
             var result = prefix
             for (k in key) {
-                result = "$result:$key"
+                result = "$result:$k"
             }
             return result.removeSuffix(":")
         }
@@ -93,7 +93,11 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
             val set = jedis.smembers(addPrefix(PREFIX_ADDRESS, address)) ?: HashSet()
             val result = HashSet<TransactionInput>()
             for (str in set) {
-                val utxo = gson.fromJson(str, TransactionInput::class.java)
+                val outputStr = jedis.get(addPrefix(PREFIX_UTXO, str))
+                val output = gson.fromJson(outputStr, TransactionOutput::class.java)
+                val utxo = TransactionInput()
+                utxo.address = output.address
+                utxo.value = output.value
                 val utxoIdSplit = str.split(":")
                 utxo.originalTxHash = utxoIdSplit[0]
                 utxo.originalOutputIndex = utxoIdSplit[1].toInt()
@@ -106,14 +110,12 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
             return jedis.smembers(addPrefix(PREFIX_ADDRESS, "ALL")) ?: HashSet()
         }
 
-        fun getUtxoAll(): Set<TransactionOutput> {
-            val keys = jedis.smembers(addPrefix(PREFIX_UTXO, "ALL"))
-            val result = HashSet<TransactionOutput>()
+        fun getUtxoAll(): Set<TransactionInput> {
+            val keys = getAddressAll()
+            val result = HashSet<TransactionInput>()
             for (address in keys) {
-                val set = jedis.smembers(addPrefix(PREFIX_ADDRESS, address))
-                for (str in set) {
-                    result.add(gson.fromJson(str, TransactionOutput::class.java))
-                }
+                val set = getUtxo(address)
+                result.addAll(set)
             }
             return result
         }

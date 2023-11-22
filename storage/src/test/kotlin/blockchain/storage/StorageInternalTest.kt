@@ -2,6 +2,7 @@ package blockchain.storage
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
+import blockchain.data.core.TransactionInput
 import blockchain.data.core.TransactionOutput
 import org.junit.jupiter.api.*
 import java.util.Date
@@ -37,10 +38,35 @@ class StorageInternalTest {
         return block
     }
 
-    private fun createUtxo(address: String, value: Long): TransactionOutput {
+    private fun createTransactionOutput(address: String, value: Long): TransactionOutput {
         return TransactionOutput(address, value)
     }
 
+    private fun createTransactionInput(
+        address: String,
+        value: Long,
+        originTxHash: String,
+        originTxOutputIdx: Int
+    ): TransactionInput {
+        return TransactionInput(address, value, originTxHash, originTxOutputIdx, "", "")
+    }
+
+    private fun prepareUtxo(): Transaction {
+        val inList = ArrayList<TransactionInput>()
+        inList.add(createTransactionInput("1", 1, "1", 0));
+        inList.add(createTransactionInput("1", 2, "2", 0));
+        inList.add(createTransactionInput("1", 3, "2", 1));
+
+        val outList = ArrayList<TransactionOutput>()
+        outList.add(createTransactionOutput("2", 5))
+        outList.add(createTransactionOutput("1", 1))
+
+        val transaction = Transaction(inList, outList)
+        transaction.hash = "123"
+
+        storageInternal.addUtxoFromTransactionOutput(transaction)
+        return transaction
+    }
 
     @Test
     fun addBlock() {
@@ -113,7 +139,7 @@ class StorageInternalTest {
         storageInternal.addBlock(createBlock(3, "31"))
         var map = storageInternal.getBlockAll()
 
-        Assertions.assertEquals(map.size, 2)
+        Assertions.assertEquals(map.size, 3)
 
         storageInternal.removeBlockByHeightRange(0, 1)
         map = storageInternal.getBlockAll()
@@ -128,10 +154,26 @@ class StorageInternalTest {
 
     @Test
     fun getBlockAll() {
+        storageInternal.addBlock(createBlock(1, "11"))
+        storageInternal.addBlock(createBlock(2, "21"))
+        storageInternal.addBlock(createBlock(3, "31"))
+        val map = storageInternal.getBlockAll()
+
+        Assertions.assertEquals(map.size, 3)
     }
 
     @Test
     fun getBlockRange() {
+        storageInternal.addBlock(createBlock(1, "11"))
+        storageInternal.addBlock(createBlock(2, "21"))
+        storageInternal.addBlock(createBlock(3, "31"))
+        var map = storageInternal.getBlockRange(2, 4)
+
+        Assertions.assertEquals(map.size, 2)
+
+        map = storageInternal.getBlockRange(4, 5)
+
+        Assertions.assertEquals(map.size, 0)
     }
 
     @Test
@@ -142,7 +184,6 @@ class StorageInternalTest {
 
         Assertions.assertNotEquals(block, null)
         Assertions.assertEquals(block?.height, 1)
-
         storageInternal.removeBlock("1")
         block = storageInternal.getBlock("1")
 
@@ -162,21 +203,12 @@ class StorageInternalTest {
     }
 
     @Test
-    fun addUtxo() {
-    }
-
-    @Test
-    fun removeUtxo() {
-    }
-
-    @Test
     fun getUtxoList() {
     }
 
     @Test
     fun getAddress() {
     }
-
 
     @Test
     fun block() {
@@ -196,5 +228,40 @@ class StorageInternalTest {
         block1.updateBlockHash()
 
         Assertions.assertEquals(hash, block1.hash)
+    }
+
+    @Test
+    fun addUtxoFromTransactionOutput() {
+        val transaction = prepareUtxo()
+
+        storageInternal.addUtxoFromTransactionOutput(transaction)
+
+        Assertions.assertEquals(2, storageInternal.utxoAll.size)
+        Assertions.assertEquals(1, storageInternal.getUtxoByAddress("1").size)
+        Assertions.assertEquals(1, storageInternal.getUtxoByAddress("2").size)
+    }
+
+    @Test
+    fun removeUtxoFromTransactionInput() {
+        val originTx = prepareUtxo()
+
+        val inList = ArrayList<TransactionInput>()
+        inList.add(createTransactionInput("2", 5, originTx.hash, 0))
+        val transaction = Transaction()
+        transaction.sourceAddress = "2"
+        transaction.inputs = inList
+
+        storageInternal.removeUtxoFromTransactionInput(transaction)
+
+        Assertions.assertEquals(1, storageInternal.utxoAll.size)
+        Assertions.assertEquals(0, storageInternal.getUtxoByAddress("2").size)
+    }
+
+    @Test
+    fun addPendingUtxoFromTransactionInput() {
+    }
+
+    @Test
+    fun removePendingUtxoFromTransactionInput() {
     }
 }

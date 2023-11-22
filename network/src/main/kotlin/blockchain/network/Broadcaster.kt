@@ -61,7 +61,7 @@ class Broadcaster @JvmOverloads constructor(initialPeerMap: Map<String, String> 
         }
     }
 
-    suspend fun getBlockRange(min: Long, max: Long): Map<String, Map<Long, List<Block>>> {
+    suspend fun getBlockRange(min: Long, max: Long): Map<String, Map<Long, Block>> {
         return aggregateData {
             try {
                 it.peerService.getBlockRange(min, max)

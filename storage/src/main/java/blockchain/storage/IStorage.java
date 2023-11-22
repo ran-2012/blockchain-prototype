@@ -3,7 +3,6 @@ package blockchain.storage;
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 import blockchain.data.core.TransactionInput;
-import blockchain.data.core.TransactionOutput;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
@@ -59,7 +58,7 @@ public interface IStorage {
 
     Set<String> getAddressAll();
 
-    Set<TransactionOutput> getUtxoAll();
+    Set<TransactionInput> getUtxoAll();
 
     void addPendingUtxoFromTransactionInput(Transaction transaction);
 
@@ -67,7 +66,7 @@ public interface IStorage {
 
     boolean hasPendingUtxo(TransactionInput utxo);
 
-    Set<TransactionOutput> getPendingUtxoAll();
+    Set<TransactionInput> getPendingUtxoAll();
 
     void setHeight(long height);
 

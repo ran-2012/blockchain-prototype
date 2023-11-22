@@ -15,7 +15,7 @@ interface PeerService {
     suspend fun getBlockWithHash(@Path("hash") hash: String): Block?
 
     @GET(BLOCKS)
-    suspend fun getBlockRange(@Query(PARAM_MIN) min: Long, @Query(PARAM_MAX) max: Long): Map<Long, List<Block>>
+    suspend fun getBlockRange(@Query(PARAM_MIN) min: Long, @Query(PARAM_MAX) max: Long): Map<Long, Block>
 
     @GET(HEARTBEAT)
     suspend fun heartbeat()
