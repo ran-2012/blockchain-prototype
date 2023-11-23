@@ -28,9 +28,6 @@ class HttpServerTest {
         val client = HttpClient("http://localhost:$port")
 
         val callback = object : Callback() {
-            override fun onNewBlockReceived(data: Block) {
-                storage.addBlock(data)
-            }
         }
 
         @JvmStatic

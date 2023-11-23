@@ -51,7 +51,7 @@ class StorageInternalTest {
         return TransactionInput(address, value, originTxHash, originTxOutputIdx, "", "")
     }
 
-    private fun prepareUtxo(): Transaction {
+    private fun createTransaction(): Transaction {
         val inList = ArrayList<TransactionInput>()
         inList.add(createTransactionInput("1", 1, "1", 0));
         inList.add(createTransactionInput("1", 2, "2", 0));
@@ -63,8 +63,9 @@ class StorageInternalTest {
 
         val transaction = Transaction(inList, outList)
         transaction.hash = "123"
+        transaction.sourceAddress = "1"
+        transaction.targetAddress = "2"
 
-        storageInternal.addUtxoFromTransactionOutput(transaction)
         return transaction
     }
 
@@ -232,7 +233,7 @@ class StorageInternalTest {
 
     @Test
     fun addUtxoFromTransactionOutput() {
-        val transaction = prepareUtxo()
+        val transaction = createTransaction()
 
         storageInternal.addUtxoFromTransactionOutput(transaction)
 
@@ -243,7 +244,8 @@ class StorageInternalTest {
 
     @Test
     fun removeUtxoFromTransactionInput() {
-        val originTx = prepareUtxo()
+        val originTx = createTransaction()
+        storageInternal.addUtxoFromTransactionOutput(originTx)
 
         val inList = ArrayList<TransactionInput>()
         inList.add(createTransactionInput("2", 5, originTx.hash, 0))
@@ -259,9 +261,21 @@ class StorageInternalTest {
 
     @Test
     fun addPendingUtxoFromTransactionInput() {
+        val transaction = createTransaction()
+        storageInternal.addPendingUtxoFromTransactionInput(transaction)
+
+        Assertions.assertEquals(transaction.inputs.size, storageInternal.pendingUtxoAll.size)
     }
 
     @Test
     fun removePendingUtxoFromTransactionInput() {
+        val transaction = createTransaction()
+        storageInternal.addPendingUtxoFromTransactionInput(transaction)
+
+        Assertions.assertEquals(transaction.inputs.size, storageInternal.pendingUtxoAll.size)
+
+        storageInternal.removePendingUtxoFromTransactionInput(transaction)
+
+        Assertions.assertEquals(0, storageInternal.pendingUtxoAll.size)
     }
 }

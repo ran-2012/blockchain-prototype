@@ -246,7 +246,6 @@ public class Block {
      * **慎用**
      * 挖矿请调用 mineBlock 方法
      * 设置随机值
-     *
      */
     public void setNonce(long nonce) {
         this.nonce = nonce;
@@ -255,13 +254,13 @@ public class Block {
     /**
      * 更新区块 merkle tree root 值
      *
-     * @return 更新后的 merkle tree root 值
      * @throws TXEmptyException 区块内 TX 为空时抛出
      */
-    public String updateMerkleRoot() throws TXEmptyException {
-        if (data.size() == 0) {
+    public void updateMerkleRoot() throws TXEmptyException {
+        if (data.isEmpty()) {
             throw new TXEmptyException();
         }
+        @SuppressWarnings("unchecked")
         ArrayList<Transaction> txs = (ArrayList<Transaction>) data.clone();
         int pow = 0;
         while (Math.pow(2, pow) < txs.size()) {
@@ -288,7 +287,6 @@ public class Block {
             pow--;
         }
         merkleRoot = merkleTree[0];
-        return merkleTree[0];
     }
 
     /**
@@ -323,7 +321,7 @@ public class Block {
      *
      * @param nonce 随机值
      * @return 是否成功
-     * @throws TXEmptyException      传入的 transaction 为空时抛出
+     * @throws TXEmptyException 传入的 transaction 为空时抛出
      */
     public boolean mineBlock(long nonce) throws TXEmptyException {
         this.nonce = nonce;

@@ -5,7 +5,8 @@ import blockchain.network.INetwork.Callback
 import blockchain.network.server.HttpServer
 import kotlinx.coroutines.runBlocking
 
-class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap: Map<String, String> = HashMap()) : INetwork {
+class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap: Map<String, String> = HashMap()) :
+    INetwork {
 
     private val server: HttpServer = HttpServer(serverPort)
     private val broadcaster: Broadcaster = Broadcaster(initialPeerMap)
@@ -30,14 +31,14 @@ class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap:
         }
     }
 
-    override fun getBlock(hash: String) {
-        runBlocking {
+    override fun getBlock(hash: String): Map<String, Block> {
+        return runBlocking {
             broadcaster.getBlock(hash)
         }
     }
 
-    override fun getBlockRange(heightMin: Long, heightMax: Long) {
-        runBlocking {
+    override fun getBlockRange(heightMin: Long, heightMax: Long): Map<String, Map<Long, Block>> {
+        return runBlocking {
             broadcaster.getBlockRange(heightMin, heightMax)
         }
     }

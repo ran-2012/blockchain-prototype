@@ -61,7 +61,6 @@ public class MiningService {
         try {
             if (block.mineBlock(nonce)) {
                 mined.set(true);
-                running.set(false);
                 callback.onNewBlockMined(block);
             }
         } catch (TXEmptyException ignored) {

@@ -136,10 +136,20 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun getTransactionAll(sourceAddress: String): MutableList<Transaction> {
+    override fun getTransaction(sourceAddress: String): MutableList<Transaction> {
         val list = ArrayList<Transaction>()
         runBlocking {
             client.transaction().find(Filters.eq(DataBaseClient.FIELD_SOURCE_ADDRESS, sourceAddress)).collect {
+                list.add(it)
+            }
+        }
+        return list
+    }
+
+    override fun getTransactionAll(): MutableList<Transaction> {
+        val list = ArrayList<Transaction>()
+        runBlocking {
+            client.transaction().find().collect {
                 list.add(it)
             }
         }
@@ -164,6 +174,12 @@ class StorageInternal(dbName: String) : IStorage {
         val address = transaction.sourceAddress
         transaction.inputs.forEach { input ->
             removeUtxo(address, input.originalTxHash, input.originalOutputIndex)
+        }
+    }
+
+    override fun removeUtxoFromTransactionOutput(transaction: Transaction) {
+        transaction.outputs.forEachIndexed { i, output ->
+            removeUtxo(output.address, transaction.hash, i)
         }
     }
 

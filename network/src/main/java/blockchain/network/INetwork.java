@@ -3,9 +3,7 @@ package blockchain.network;
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 public interface INetwork {
@@ -15,9 +13,9 @@ public interface INetwork {
 
     void newBlock(Block block);
 
-    void getBlock(String hash);
+    Map<String, Block> getBlock(String hash);
 
-    void getBlockRange(Long heightMin, Long heightMax);
+    Map<String, Map<Long, Block>> getBlockRange(Long heightMin, Long heightMax);
 
     class Callback {
         public void onNewBlockReceived(Block data) {
@@ -28,11 +26,11 @@ public interface INetwork {
             return null;
         }
 
-        public List<Block> onBlockWithHeightRequested(Long height) {
-            return new ArrayList<>();
+        public Block onBlockWithHeightRequested(Long height) {
+            return null;
         }
 
-        public Map<Long, List<Block>> onBlockRangeRequested(Long heightMin, Long heightMax) {
+        public Map<Long, Block> onBlockRangeRequested(Long heightMin, Long heightMax) {
             return new HashMap<>();
         }
 

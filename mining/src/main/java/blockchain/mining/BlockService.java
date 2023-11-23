@@ -18,10 +18,7 @@ import blockchain.utility.Hash;
 import blockchain.utility.Log;
 import blockchain.utility.Rsa;
 
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -34,7 +31,12 @@ public class BlockService {
 
     public static long CHECK_TRANSACTION_POOL_INTERVAL = 1000;
 
-    public static long TARGET_TIME = 10_000;
+    public static long TARGET_TIME_PER_BLOCK = 1_000;
+    public static int DEFAULT_DIFFICULTY = 20;
+    public static int ADJUST_DIFFICULTY_BLOCK_INTERVAL = 10;
+    public static long TARGET_TIME = TARGET_TIME_PER_BLOCK * ADJUST_DIFFICULTY_BLOCK_INTERVAL;
+
+    private int currentDifficulty = DEFAULT_DIFFICULTY;
 
     private final IStorage storage = Storage.getInstance();
     private final INetwork network = Network.getInstance();
@@ -68,10 +70,6 @@ public class BlockService {
         executor.execute(() -> internal.addNewBlock(block));
     }
 
-    private void revertBlock(String hash) {
-        executor.execute(() -> internal.revertBlock(hash));
-    }
-
     private void addNewTransaction(Transaction transaction) {
         executor.execute(() -> internal.addNewTransaction(transaction));
     }
@@ -80,15 +78,6 @@ public class BlockService {
         executor.schedule(checkTransactionPoolRunnable, CHECK_TRANSACTION_POOL_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
-    /**
-     * 现有问题：1.需要一个能获取当前block的函数，不是正在挖的，而是链上最后一个高度上面的block
-     * 2.交易池的意思是我从里面选交易来挖矿，如果挖矿成功了也存储成功了，那么区块里包括的交易就需要从交易池里删除；相反，revert的block
-     * 包括的交易也需要重新添加到交易池里面，是这样么？
-     * 3.utxo好像没list
-     * 4.******
-     *
-     * @return
-     */
     private boolean checkTransactionPool() {
         // TODO: Check the time between previous block and current time.
         long currentTime = new Date().getTime();
@@ -99,33 +88,55 @@ public class BlockService {
     }
 
     private List<Transaction> pollTransaction() {
-        ArrayList<Transaction> list = new ArrayList<>();
-        //TODO: select valid transactions in the pool and add to the ArrayList list
-        List<Transaction> pool = new ArrayList<>();
+        // TODO: Maybe not just return all transactions?
+        return storage.getTransactionAll();
+    }
 
-
-        for (Transaction transaction : pool) {
-            // No check here, all transaction is checked before adding to pool
-//            list.add(transaction);
+    private int getDifficult(long timestamp) {
+        long nextHeight = storage.getHeight() + 1;
+        // First block in block 0 (pre-generated)
+        // Only adjust after 10 blocks
+        if (nextHeight < ADJUST_DIFFICULTY_BLOCK_INTERVAL) {
+            return DEFAULT_DIFFICULTY;
         }
-        return list;
+        // Adjust difficulty every 10 blocks
+        if (nextHeight % ADJUST_DIFFICULTY_BLOCK_INTERVAL == 0) {
+            long preHeight = nextHeight - ADJUST_DIFFICULTY_BLOCK_INTERVAL;
+
+            Map<Long, Block> map = storage.getBlockRange(preHeight, nextHeight);
+            Block preBlock = map.get(preHeight);
+
+            assert preBlock != null;
+
+            long timeDelta = timestamp - preBlock.getTimestamp();
+
+            assert timeDelta > 0;
+
+
+            if (timeDelta / TARGET_TIME > 1) {
+                currentDifficulty -= (int) (timeDelta / TARGET_TIME);
+            } else if (TARGET_TIME / timeDelta > 1) {
+                currentDifficulty += (int) (TARGET_TIME / timeDelta);
+            }
+        }
+        return currentDifficulty;
     }
 
     private Block generateNewBlock(List<Transaction> transactions) {
         // Generate block here then mine
         Block block = new Block();
-        //TODO:Fill related data into the new block
         block.setPrevHash(storage.getLastBlock().getHash());
-        block.setTimestamp(new Date().getTime());
+        long timestamp = new Date().getTime();
+        block.setTimestamp(timestamp);
+        block.setDifficulty(getDifficult(timestamp));
         for (Transaction transaction : transactions) {
             try {
                 block.addTransaction(transaction);
             } catch (AlreadyMinedException ignored) {
             }
         }
-        //TODO:set nonce
         block.setNonce(0);
-        block.setHeight(storage.getLastBlock().getHeight() + 1); // Set the block height to the previous block's height plus one
+        block.setHeight(storage.getLastBlock().getHeight() + 1);
         block.setHash(Hash.hashString(block.toString()));
         return block;
     }
@@ -169,12 +180,22 @@ public class BlockService {
      */
     private class Internal {
 
+        private Map<Long, Block> getBlocksUntilHashMatches(Block block) {
+            Map<Long, Block> result = new HashMap<>();
+            if (block.getHeight() > storage.getHeight()) {
+                Map<String, Map<Long, Block>> map = network.getBlockRange(storage.getHeight(), block.getHeight());
+            }
+            return result;
+        }
+
         private void addNewBlock(Block block) {
             if (block.getHeight() <= storage.getHeight()) {
                 log.info("Block height {} is smaller than current height {}, skip.",
                         block.getHeight(), storage.getHeight());
                 return;
             }
+
+
             // Check block
             try {
                 block.validate();
@@ -182,16 +203,19 @@ public class BlockService {
                 log.error("Invalid block: hash mismatch");
                 return;
             }
+            if (block.getHeight() == storage.getHeight() + 1) {
+                Block lastBlock = storage.getLastBlock();
+                if (!block.getPrevHash().equals(lastBlock.getHash())) {
+                    log.error("Invalid block: previous hash mismatch");
+                    return;
+                }
+                // Add block to database
+                storage.addBlock(block);
+                storage.setHeight(block.getHeight());
+            } else {
 
-            Block lastBlock = storage.getLastBlock();
-            if (!block.getPrevHash().equals(lastBlock.getHash())) {
-                log.error("Invalid block: previous hash mismatch");
-                return;
             }
 
-            // Add block to database
-            storage.addBlock(block);
-            storage.setHeight(block.getHeight());
         }
 
         private void addNewTransaction(Transaction transaction) {
@@ -218,20 +242,47 @@ public class BlockService {
             storage.addTransaction(transaction);
         }
 
-        private void revertBlock(String hash) {
-            // Delete block data
-            Block block = storage.getBlock(hash);
-            storage.removeBlock(hash);
+        // Revert last block in database
+        private void revertBlock() {
+            Block block = storage.getLastBlock();
+
+            assert block != null;
+            assert block.getHeight() > 0;
 
             // Add transactions back into the pool
-            if (block != null) {
-                List<Transaction> transactions = block.getData();
-                for (Transaction transaction : transactions) {
-                    storage.addPendingUtxoFromTransactionInput(transaction);
-                    storage.addTransaction(transaction);
-                }
-                // TODO: Check all utxo in the reverted block and remove them and transactions use these utxo
+            List<Transaction> transactions = block.getData();
+            for (Transaction transaction : transactions) {
+                revertTransactionFromBlock(transaction);
             }
+        }
+
+        // Recursively remove all transaction which contains output from the transaction
+        private void removeRelatedTransactionFromPool(Transaction transaction) {
+            List<Transaction> transactions = storage.getTransactionAll();
+            for (Transaction transaction1 : transactions) {
+                for (TransactionInput input : transaction1.inputs) {
+                    if (input.originalTxHash.equals(transaction.hash)) {
+                        revertTransactionFromPool(transaction);
+                    }
+                }
+            }
+        }
+
+        // Put transactions back to the pool
+        private void revertTransactionFromBlock(Transaction transaction) {
+            storage.removeUtxoFromTransactionOutput(transaction);
+            storage.addPendingUtxoFromTransactionInput(transaction);
+            storage.addTransaction(transaction);
+
+            removeRelatedTransactionFromPool(transaction);
+        }
+
+        // Remove transaction from the pool
+        private void revertTransactionFromPool(Transaction transaction) {
+            storage.removePendingUtxoFromTransactionInput(transaction);
+            storage.removeTransaction(transaction.hash);
+
+            removeRelatedTransactionFromPool(transaction);
         }
     }
 
@@ -251,6 +302,21 @@ public class BlockService {
     };
 
     private final INetwork.Callback networkCallback = new INetwork.Callback() {
+        @Override
+        public Block onBlockWithHashRequested(String hash) {
+            return storage.getBlock(hash);
+        }
+
+        @Override
+        public Block onBlockWithHeightRequested(Long height) {
+            return storage.getBlockRange(height, height).get(height);
+        }
+
+        @Override
+        public Map<Long, Block> onBlockRangeRequested(Long heightMin, Long heightMax) {
+            return storage.getBlockRange(heightMin, heightMax);
+        }
+
         @Override
         public void onNewBlockReceived(Block data) {
             if (miningService.getBlock().getHeight() == data.getHeight()) {
