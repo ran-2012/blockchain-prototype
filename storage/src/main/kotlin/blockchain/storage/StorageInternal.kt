@@ -5,6 +5,7 @@ import blockchain.data.core.Transaction
 import blockchain.data.core.TransactionInput
 import blockchain.data.core.TransactionInputOutputBase
 import blockchain.data.core.TransactionOutput
+import blockchain.utility.Log
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Sorts
 import kotlinx.coroutines.flow.single
@@ -13,11 +14,17 @@ import org.bson.Document
 import org.bson.conversions.Bson
 import org.jetbrains.annotations.TestOnly
 import java.lang.Exception
+import java.lang.RuntimeException
 
 class StorageInternal(dbName: String) : IStorage {
 
+    private val log = Log.get(this)
+
     private val client: DataBaseClient
     private val redisClient: RedisClient
+
+    private val lastBlockLock = Object()
+    private var _lastBlock: Block? = null
 
     init {
         client = DataBaseClient(dbName)
@@ -53,32 +60,20 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     override fun addBlock(data: Block) {
-        runBlocking {
-            client.block().insertOne(data)
+        synchronized(lastBlockLock) {
+            _lastBlock = null
+            runBlocking {
+                client.block().insertOne(data)
+            }
         }
     }
 
-    override fun removeBlockByHeight(height: Long) {
-        runBlocking {
-            client.block().deleteMany(Filters.eq(DataBaseClient.FIELD_HEIGHT, height))
-        }
-    }
-
-    override fun removeBlock(hash: String) {
-        runBlocking {
-            client.block().deleteOne(Filters.eq(DataBaseClient.FIELD_HASH, hash))
-        }
-    }
-
-    override fun removeBlockByHashRange(hashes: List<String>) {
-        runBlocking {
-            client.block().deleteMany(Filters.`in`(DataBaseClient.FIELD_HASH, hashes))
-        }
-    }
-
-    override fun removeBlockByHeightRange(heightMin: Long, heightMax: Long) {
-        runBlocking {
-            client.block().deleteMany(getRangeFilter(heightMin, heightMax))
+    override fun removeBlock() {
+        synchronized(lastBlockLock) {
+            runBlocking {
+                client.block().deleteOne(Filters.eq(DataBaseClient.FIELD_HEIGHT, height))
+            }
+            _lastBlock = null
         }
     }
 
@@ -113,15 +108,20 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     override fun getLastBlock(): Block {
-        var block = Block()
-        runBlocking {
-            try {
-                block = client.block().find(Sorts.descending(DataBaseClient.FIELD_HEIGHT)).limit(1).single()
-            } catch (e: Exception) {
-                e.printStackTrace()
+        return synchronized(lastBlockLock) {
+            if (_lastBlock == null) {
+                runBlocking {
+                    try {
+                        _lastBlock =
+                            client.block().find().sort(Sorts.descending(DataBaseClient.FIELD_HEIGHT)).limit(1).single()
+                    } catch (e: Exception) {
+                        log.error(e)
+                        throw RuntimeException(e)
+                    }
+                }
             }
+            _lastBlock!!
         }
-        return block
     }
 
     override fun addTransaction(data: Transaction) {
@@ -156,11 +156,13 @@ class StorageInternal(dbName: String) : IStorage {
         return list
     }
 
-    private fun addUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
+    @TestOnly
+    fun addUtxo(transactionId: String, outputIdx: Int, data: TransactionOutput) {
         redisClient.normal.addUtxo(transactionId, outputIdx, data)
     }
 
-    private fun removeUtxo(address: String, transactionId: String, outputIdx: Int) {
+    @TestOnly
+    fun removeUtxo(address: String, transactionId: String, outputIdx: Int) {
         redisClient.normal.removeUtxo(address, transactionId, outputIdx)
     }
 
@@ -228,11 +230,7 @@ class StorageInternal(dbName: String) : IStorage {
         return redisClient.pending.getUtxoAll()
     }
 
-    override fun setHeight(height: Long) {
-        redisClient.normal.setHeight(height)
-    }
-
     override fun getHeight(): Long {
-        return redisClient.normal.getHeight()
+        return lastBlock.height
     }
 }

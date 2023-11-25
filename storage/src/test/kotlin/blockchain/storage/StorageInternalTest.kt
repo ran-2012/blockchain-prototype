@@ -7,7 +7,6 @@ import blockchain.data.core.TransactionOutput
 import org.junit.jupiter.api.*
 import java.util.Date
 
-@Suppress("UsePropertyAccessSyntax")
 class StorageInternalTest {
 
     companion object {
@@ -33,8 +32,8 @@ class StorageInternalTest {
 
     private fun createBlock(height: Long, hash: String): Block {
         val block = Block()
-        block.height = height;
-        block.hash = hash;
+        block.height = height
+        block.hash = hash
         return block
     }
 
@@ -53,15 +52,15 @@ class StorageInternalTest {
 
     private fun createTransaction(): Transaction {
         val inList = ArrayList<TransactionInput>()
-        inList.add(createTransactionInput("1", 1, "1", 0));
-        inList.add(createTransactionInput("1", 2, "2", 0));
-        inList.add(createTransactionInput("1", 3, "2", 1));
+        inList.add(createTransactionInput("1", 1, "1", 0))
+        inList.add(createTransactionInput("1", 2, "2", 0))
+        inList.add(createTransactionInput("1", 3, "2", 1))
 
         val outList = ArrayList<TransactionOutput>()
         outList.add(createTransactionOutput("2", 5))
         outList.add(createTransactionOutput("1", 1))
 
-        val transaction = Transaction(inList, outList)
+        val transaction = Transaction("1", "2", inList, outList)
         transaction.hash = "123"
         transaction.sourceAddress = "1"
         transaction.targetAddress = "2"
@@ -81,76 +80,6 @@ class StorageInternalTest {
         map = storageInternal.getBlockAll()
 
         Assertions.assertEquals(map.size, 2)
-    }
-
-    @Test
-    fun removeBlockByHeight() {
-        storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(1, "12"))
-        storageInternal.addBlock(createBlock(2, "21"))
-        storageInternal.addBlock(createBlock(2, "22"))
-        storageInternal.addBlock(createBlock(2, "23"))
-        var map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 2)
-
-        storageInternal.removeBlockByHeight(1)
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 1)
-
-        storageInternal.removeBlockByHeight(2)
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 0)
-    }
-
-    @Test
-    fun removeBlockByHash() {
-        storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(2, "21"))
-        var map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 2)
-
-        storageInternal.removeBlock("11")
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 1)
-    }
-
-    @Test
-    fun removeBlockByHashRange() {
-        storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(2, "21"))
-        var map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 2)
-
-        storageInternal.removeBlockByHashRange(listOf("11"))
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 1)
-    }
-
-    @Test
-    fun removeBlockByHeightRange() {
-        storageInternal.addBlock(createBlock(1, "11"))
-        storageInternal.addBlock(createBlock(2, "21"))
-        storageInternal.addBlock(createBlock(3, "31"))
-        var map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 3)
-
-        storageInternal.removeBlockByHeightRange(0, 1)
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 2)
-
-        storageInternal.removeBlockByHeightRange(2, 3)
-        map = storageInternal.getBlockAll()
-
-        Assertions.assertEquals(map.size, 0)
     }
 
     @Test
@@ -185,10 +114,41 @@ class StorageInternalTest {
 
         Assertions.assertNotEquals(block, null)
         Assertions.assertEquals(block?.height, 1)
-        storageInternal.removeBlock("1")
-        block = storageInternal.getBlock("1")
+
+        storageInternal.removeBlock()
+        block = storageInternal.getBlock("2")
 
         Assertions.assertEquals(block, null)
+    }
+
+    @Test
+    fun removeBlock() {
+        storageInternal.addBlock(createBlock(1, "1"))
+        storageInternal.addBlock(createBlock(2, "2"))
+        var map = storageInternal.blockAll
+
+        Assertions.assertEquals(2, map.size)
+
+        storageInternal.removeBlock()
+        map = storageInternal.blockAll
+
+        Assertions.assertEquals(1, map.size)
+    }
+
+    @Test
+    fun getLastBlock() {
+        storageInternal.addBlock(createBlock(1, "1"))
+        storageInternal.addBlock(createBlock(2, "2"))
+        var block = storageInternal.lastBlock
+
+        Assertions.assertEquals(2, block.height)
+        Assertions.assertEquals("2", block.hash)
+
+        storageInternal.removeBlock()
+        block = storageInternal.lastBlock
+
+        Assertions.assertEquals(1, block.height)
+        Assertions.assertEquals("1", block.hash)
     }
 
     @Test
@@ -216,7 +176,7 @@ class StorageInternalTest {
         val list = ArrayList<Transaction>()
         val transaction = Transaction()
         list.add(transaction)
-        val block = Block(10, list, Date().time, "123123", 0, 1001000);
+        val block = Block(10, list, Date().time, "123123", 0, 1001000)
 
         val hash = block.updateBlockHash()
         val hash1 = block.updateBlockHash()
@@ -278,4 +238,5 @@ class StorageInternalTest {
 
         Assertions.assertEquals(0, storageInternal.pendingUtxoAll.size)
     }
+
 }

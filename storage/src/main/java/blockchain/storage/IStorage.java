@@ -13,13 +13,10 @@ public interface IStorage {
 
     void addBlock(Block data);
 
-    void removeBlockByHeight(long height);
-
-    void removeBlock(String hash);
-
-    void removeBlockByHashRange(List<String> hashes);
-
-    void removeBlockByHeightRange(Long heightMin, Long heightMax);
+    /**
+     * Remove last block
+     */
+    void removeBlock();
 
     /**
      * Get all blocks.
@@ -72,7 +69,6 @@ public interface IStorage {
 
     Set<TransactionInput> getPendingUtxoAll();
 
-    void setHeight(long height);
 
     long getHeight();
 }

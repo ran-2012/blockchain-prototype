@@ -4,11 +4,7 @@ import blockchain.utility.Hash;
 import blockchain.utility.Json;
 import org.jetbrains.annotations.TestOnly;
 
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.List;
 
 
@@ -35,13 +31,14 @@ public class Transaction {
         this.inputs = null;
         this.outputs = new ArrayList<>(1);
         outputs.add(coinbaseOutput);
+        this.targetAddress = coinbaseOutput.address;
         this.timestamp = System.currentTimeMillis();
         this.coinbase = true;
         this.fee = 0;
         this.hash = updateHash();
     }
 
-    public Transaction(List<TransactionInput> txInputs, List<TransactionOutput> txOutputs) {
+    public Transaction(String sourceAddress, String targetAddress, List<TransactionInput> txInputs, List<TransactionOutput> txOutputs) {
         this.inputs = txInputs;
         this.outputs = txOutputs;
         this.timestamp = System.currentTimeMillis();

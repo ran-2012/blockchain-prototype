@@ -17,6 +17,7 @@ import blockchain.storage.Storage;
 import blockchain.utility.Hash;
 import blockchain.utility.Log;
 import blockchain.utility.Rsa;
+import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
 import java.util.concurrent.Executors;
@@ -28,15 +29,16 @@ public class BlockService {
 
     Log log = Log.get(this);
 
+    public static float FEE_INDEX = 0.1f;
 
-    public static long CHECK_TRANSACTION_POOL_INTERVAL = 1000;
+    public static long REWARD_PER_BLOCK = 100_000;
 
-    public static long TARGET_TIME_PER_BLOCK = 1_000;
+    public static long CHECK_TRANSACTION_POOL_INTERVAL = 1_000; // ms
+
+    public static long TARGET_TIME_PER_BLOCK = 5_000; // ms
     public static int DEFAULT_DIFFICULTY = 20;
     public static int ADJUST_DIFFICULTY_BLOCK_INTERVAL = 10;
     public static long TARGET_TIME = TARGET_TIME_PER_BLOCK * ADJUST_DIFFICULTY_BLOCK_INTERVAL;
-
-    private int currentDifficulty = DEFAULT_DIFFICULTY;
 
     private final IStorage storage = Storage.getInstance();
     private final INetwork network = Network.getInstance();
@@ -44,6 +46,11 @@ public class BlockService {
     private final MiningService miningService = MiningService.getInstance();
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final Internal internal = new Internal();
+
+
+    private String publicKey = "";
+    private String privateKey = "";
+    private String address = "";
 
     private final Runnable checkTransactionPoolRunnable = () -> {
         if (miningService.isRunning()) {
@@ -58,12 +65,28 @@ public class BlockService {
         scheduleCheckTransactionPool();
     };
 
-    public BlockService(boolean startMining) {
+    public BlockService() {
+        this(false, "", "");
+    }
+
+    public BlockService(boolean startMining, String publicKey, String privateKey) {
+        this.publicKey = publicKey;
+        this.privateKey = privateKey;
+        this.address = Hash.hashString(publicKey);
+
         Network.getInstance().registerCallback(networkCallback);
-        miningService.setCallback(callback);
+
         if (startMining) {
+            assert !publicKey.isEmpty();
+            assert !privateKey.isEmpty();
+
+            miningService.setCallback(callback);
             scheduleCheckTransactionPool();
         }
+    }
+
+    public long getFee(long value) {
+        return (long) (value * FEE_INDEX);
     }
 
     private void addNewBlock(Block block) {
@@ -79,16 +102,15 @@ public class BlockService {
     }
 
     private boolean checkTransactionPool() {
-        // TODO: Check the time between previous block and current time.
         long currentTime = new Date().getTime();
         Block lastBlock = storage.getLastBlock();
         long previousBlockTime = lastBlock.getTimestamp();
         long timeDifference = currentTime - previousBlockTime;
-        return timeDifference > 60000;
+        return timeDifference > 2_000 && !storage.getTransactionAll().isEmpty();
     }
 
     private List<Transaction> pollTransaction() {
-        // TODO: Maybe not just return all transactions?
+        // Maybe just return all transactions
         return storage.getTransactionAll();
     }
 
@@ -99,6 +121,7 @@ public class BlockService {
         if (nextHeight < ADJUST_DIFFICULTY_BLOCK_INTERVAL) {
             return DEFAULT_DIFFICULTY;
         }
+        int currentDifficulty = storage.getLastBlock().getDifficulty();
         // Adjust difficulty every 10 blocks
         if (nextHeight % ADJUST_DIFFICULTY_BLOCK_INTERVAL == 0) {
             long preHeight = nextHeight - ADJUST_DIFFICULTY_BLOCK_INTERVAL;
@@ -115,6 +138,9 @@ public class BlockService {
 
             if (timeDelta / TARGET_TIME > 1) {
                 currentDifficulty -= (int) (Math.log((double) timeDelta / TARGET_TIME) / Math.log(2));
+                if (currentDifficulty < 0) {
+                    currentDifficulty = 0;
+                }
             } else if (TARGET_TIME / timeDelta > 1) {
                 currentDifficulty += (int) (Math.log((double) TARGET_TIME / timeDelta) / Math.log(2));
             }
@@ -129,12 +155,16 @@ public class BlockService {
         long timestamp = new Date().getTime();
         block.setTimestamp(timestamp);
         block.setDifficulty(getDifficult(timestamp));
+        long fee = 0;
         for (Transaction transaction : transactions) {
             try {
                 block.addTransaction(transaction);
+                fee += transaction.fee;
             } catch (AlreadyMinedException ignored) {
             }
         }
+        TransactionOutput coinBaseOutput = new TransactionOutput(this.address, fee);
+        Transaction coinBaseTransaction = new Transaction(coinBaseOutput);
         block.setNonce(0);
         block.setHeight(storage.getLastBlock().getHeight() + 1);
         block.setHash(Hash.hashString(block.toString()));
@@ -211,7 +241,6 @@ public class BlockService {
                 }
                 // Add block to database
                 storage.addBlock(block);
-                storage.setHeight(block.getHeight());
             } else {
 
             }
@@ -295,9 +324,8 @@ public class BlockService {
 
         @Override
         public void onAllNonceTried(Block block) {
-            block.setTimestamp(new Date().getTime());
-            miningService.setBlock(block);
-            miningService.start();
+            // Empty
+            // Unlikely to use up all nonce
         }
     };
 
@@ -327,41 +355,7 @@ public class BlockService {
 
         @Override
         public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
-            Set<TransactionInput> utxoList = storage.getUtxoByAddress(sourceAddress);
-            List<TransactionInput> inputList = new ArrayList<>();
-            List<TransactionOutput> outputList = new ArrayList<>();
-
-            long totalValue = 0L;
-            for (TransactionInput utxo : utxoList) {
-                totalValue += utxo.getValue();
-                inputList.add(utxo);
-                if (totalValue >= value) {
-                    break;
-                }
-            }
-            if (totalValue < value) {
-                // Reject the transaction if the source address does not have enough funds
-                throw new RuntimeException("Not enough balance in " + sourceAddress);
-            }
-
-            // To targetAddress
-            TransactionOutput output1 = new TransactionOutput(targetAddress, value);
-            outputList.add(output1);
-
-            if (totalValue > value) {
-                // Send back additional money back
-                TransactionOutput output2 = new TransactionOutput(sourceAddress, totalValue - value);
-                outputList.add(output2);
-            }
-            // Generate a new transaction
-            Transaction transaction = new Transaction(inputList, outputList);
-            transaction.sourceAddress = sourceAddress;
-            transaction.targetAddress = targetAddress;
-
-            log.info("Generate new transaction from: {}, to: {}, value: {}", sourceAddress, targetAddress, value);
-
-            // Return the new transaction to the client
-            return transaction;
+            return generateNewTransaction(sourceAddress, targetAddress, value);
         }
 
         @Override
@@ -370,4 +364,42 @@ public class BlockService {
             addNewTransaction(transaction);
         }
     };
+
+    @TestOnly
+    public Transaction generateNewTransaction(String sourceAddress, String targetAddress, long value) {
+        Set<TransactionInput> utxoList = storage.getUtxoByAddress(sourceAddress);
+        List<TransactionInput> inputList = new ArrayList<>();
+        List<TransactionOutput> outputList = new ArrayList<>();
+
+        long requiredValue = value + getFee(value);
+        long usedValue = 0L;
+        for (TransactionInput utxo : utxoList) {
+            usedValue += utxo.getValue();
+            inputList.add(utxo);
+            if (usedValue >= requiredValue) {
+                break;
+            }
+        }
+        if (usedValue < requiredValue) {
+            // Reject the transaction if the source address does not have enough funds
+            throw new RuntimeException("Not enough balance in " + sourceAddress);
+        }
+
+        // To targetAddress
+        TransactionOutput output1 = new TransactionOutput(targetAddress, value);
+        outputList.add(output1);
+
+        if (usedValue > requiredValue) {
+            // Send back additional money back
+            TransactionOutput output2 = new TransactionOutput(sourceAddress, usedValue - requiredValue);
+            outputList.add(output2);
+        }
+        // Generate a new transaction
+        Transaction transaction = new Transaction(sourceAddress, targetAddress, inputList, outputList);
+
+        log.info("Generate new transaction from: {}, to: {}, value: {}", sourceAddress, targetAddress, value);
+
+        // Return the new transaction to the client
+        return transaction;
+    }
 }

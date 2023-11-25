@@ -45,7 +45,10 @@ public class MiningService {
         executor.execute(() -> {
             while (running.get() && !mined.get()) {
                 tryMine(nonce.get());
-                nonce.incrementAndGet();
+                if (nonce.incrementAndGet() == Long.MAX_VALUE) {
+                    log.warn("All nonce used, stop mining");
+                    running.set(false);
+                }
             }
         });
     }

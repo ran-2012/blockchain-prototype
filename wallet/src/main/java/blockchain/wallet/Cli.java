@@ -107,6 +107,7 @@ public class Cli {
             if (checkTransaction(sourceAddress, targetAddress, value, transaction)) {
                 signTransaction(sourceAddress, pair.pk, pair.sk, transaction);
             }
+            transaction.updateHash();
             client.postSignedTransaction(transaction);
         } catch (Exception e) {
             log.error(e.getMessage());
