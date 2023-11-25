@@ -1,5 +1,6 @@
+package blockchain.mining;
+
 import com.beust.jcommander.Parameter;
-import com.beust.jcommander.Parameters;
 
 import java.util.List;
 
@@ -18,4 +19,7 @@ public class Config {
 
     @Parameter(names = "--peer", description = "Peers' HTTP url")
     public List<String> peers;
+
+    @Parameter(names = "--public-key", description = "Public key used in node")
+    public String publicKey;
 }

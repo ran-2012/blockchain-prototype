@@ -1,7 +1,7 @@
 buildscript {
     ext {
         java_target_version = 17
-        kotlin_version = '1.9.10'
+        kotlin_version = '1.9.21'
         kotlin_coroutine_version = '1.7.3'
 
         log4j_version = '2.21.0'
@@ -9,7 +9,7 @@ buildscript {
 }
 
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.9.10'
+    id 'org.jetbrains.kotlin.jvm' version "$kotlin_version"
     id 'application'
 }
 
@@ -21,11 +21,12 @@ repositories {
 }
 
 dependencies {
+    implementation project(':utility')
     implementation project(':data')
-    implementation project(':mining')
     implementation project(':storage')
     implementation project(':network')
-    implementation project(':utility')
+    implementation project(':mining')
+    implementation project(':wallet')
 
     implementation 'com.beust:jcommander:1.82'
 

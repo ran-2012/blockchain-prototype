@@ -38,6 +38,8 @@ public class MiningService {
     }
 
     public void start() {
+        log.info("Starting mining service");
+
         running.set(true);
         mined.set(false);
         nonce.set(0);
@@ -54,6 +56,7 @@ public class MiningService {
     }
 
     public void stop() {
+        log.info("Stopping mining service");
         running.set(false);
     }
 

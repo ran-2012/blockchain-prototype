@@ -23,6 +23,7 @@ import java.util.*;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @SuppressWarnings("FieldCanBeLocal")
 public class BlockService {
@@ -47,12 +48,17 @@ public class BlockService {
     private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
     private final Internal internal = new Internal();
 
+    private final AtomicBoolean running = new AtomicBoolean(false);
 
-    private String publicKey = "";
-    private String privateKey = "";
-    private String address = "";
+    private final Boolean isMiner;
+    private final String publicKey;
+    private final String address;
 
     private final Runnable checkTransactionPoolRunnable = () -> {
+        if (!running.get()) {
+            return;
+        }
+
         if (miningService.isRunning()) {
             return;
         }
@@ -66,22 +72,40 @@ public class BlockService {
     };
 
     public BlockService() {
-        this(false, "", "");
+        this(false, "");
     }
 
-    public BlockService(boolean startMining, String publicKey, String privateKey) {
+    public BlockService(boolean isMiner, String publicKey) {
+        this.isMiner = isMiner;
+        assert !publicKey.isEmpty();
         this.publicKey = publicKey;
-        this.privateKey = privateKey;
         this.address = Hash.hashString(publicKey);
 
         Network.getInstance().registerCallback(networkCallback);
 
-        if (startMining) {
-            assert !publicKey.isEmpty();
-            assert !privateKey.isEmpty();
+    }
+
+    public void start() {
+        log.info("Starting block service");
+
+        running.set(true);
+        if (isMiner) {
 
             miningService.setCallback(callback);
             scheduleCheckTransactionPool();
+        }
+    }
+
+    public void stop() {
+        log.info("Stopping block service");
+        running.set(false);
+        miningService.stop();
+        try {
+            if (!executor.awaitTermination(1000, TimeUnit.MILLISECONDS)) {
+                log.warn("Time out, force stopping");
+                executor.shutdownNow();
+            }
+        } catch (InterruptedException ignored) {
         }
     }
 
@@ -135,14 +159,15 @@ public class BlockService {
 
             assert timeDelta > 0;
 
-
             if (timeDelta / TARGET_TIME > 1) {
                 currentDifficulty -= (int) (Math.log((double) timeDelta / TARGET_TIME) / Math.log(2));
                 if (currentDifficulty < 0) {
                     currentDifficulty = 0;
                 }
+                log.debug("Difficulty changed to: {}", currentDifficulty);
             } else if (TARGET_TIME / timeDelta > 1) {
                 currentDifficulty += (int) (Math.log((double) TARGET_TIME / timeDelta) / Math.log(2));
+                log.debug("Difficulty changed to: {}", currentDifficulty);
             }
         }
         return currentDifficulty;
@@ -219,6 +244,10 @@ public class BlockService {
         }
 
         private void addNewBlock(Block block) {
+            if (!running.get()) {
+                return;
+            }
+
             if (block.getHeight() <= storage.getHeight()) {
                 log.info("Block height {} is smaller than current height {}, skip.",
                         block.getHeight(), storage.getHeight());
@@ -248,6 +277,10 @@ public class BlockService {
         }
 
         private void addNewTransaction(Transaction transaction) {
+            if (!running.get()) {
+                return;
+            }
+
             log.info("New transaction received from {} to {}", transaction.sourceAddress, transaction.targetAddress);
             // Transaction may come from user and the hash is not updated
             transaction.updateHash();

@@ -6,11 +6,9 @@ import blockchain.data.core.TransactionOutput;
 import blockchain.utility.Hash;
 import blockchain.utility.Log;
 import blockchain.utility.Rsa;
-import com.google.gson.Gson;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
-import java.io.*;
 import java.util.List;
 import java.util.Map;
 
@@ -19,50 +17,21 @@ public class Cli {
 
     private final Log log = Log.get(this);
 
-    public static String CONFIG_NAME = "config.json";
+    public static String CONFIG_NAME = "wallet.json";
 
-    private final Gson gson = new Gson();
 
-    private Config config = new Config();
-    private HttpClientWrapper client;
+    private Config config;
+    private final HttpClientWrapper client;
 
     public Cli() {
-        loadConfig();
+        this.config = Config.load();
         client = new HttpClientWrapper(config.nodeUrl);
-    }
-
-    private void loadConfig() {
-        try {
-            File file = new File(CONFIG_NAME);
-            file.createNewFile();
-            FileReader fileReader = new FileReader(file);
-            this.config = gson.fromJson(fileReader, Config.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void saveConfig() {
-        try {
-            File file = new File(CONFIG_NAME);
-            file.createNewFile();
-            FileWriter fileWriter = new FileWriter(file);
-            fileWriter.write(gson.toJson(config));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
     }
 
     @Command(name = "generate", description = {"Generate a new pair of keys"})
     public int generate() {
-        Map<String, String> map = Rsa.generateKey();
-        Config.Pair pair = new Config.Pair();
-        pair.pk = map.get("pk");
-        pair.sk = map.get("sk");
-        pair.address = Hash.hashString(pair.pk);
-        config.list.add(pair);
-        saveConfig();
+        config.list.add(Config.generateNewPair());
+        Config.save(this.config);
         return 0;
     }
 
@@ -82,7 +51,7 @@ public class Cli {
         pair.sk = secretKey;
         pair.pk = publicKey;
         config.list.add(pair);
-        saveConfig();
+        Config.save(config);
         return 0;
     }
 
@@ -92,6 +61,7 @@ public class Cli {
             throw new IllegalArgumentException("Index must be in valid range");
         }
         config.list.remove(index);
+        Config.save(config);
         return 0;
     }
 
@@ -158,7 +128,7 @@ public class Cli {
 
     @Command(name = "balance", description = {"Query balance"})
     public int balance(@Parameters(paramLabel = "ADDRESS INDEX") int addressIndex) {
-        String sourceAddress = config.list.get(addressIndex).pk;
+        String sourceAddress = config.list.get(addressIndex).address;
         try {
             List<TransactionInput> list = client.getUtxoList(sourceAddress);
             long balance = 0;

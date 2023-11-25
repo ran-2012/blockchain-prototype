@@ -14,7 +14,7 @@ public class Block {
     // 区块高度
     private long height;
     // 区块数据
-    private ArrayList<Transaction> data;
+    private List<Transaction> data;
     // 区块时间戳
     private long timestamp;
     // 前一区块哈希
@@ -33,7 +33,7 @@ public class Block {
      */
     public Block() {
         height = 0;
-        data = new ArrayList<Transaction>();
+        data = new ArrayList<>();
         timestamp = new Date().getTime();
         prevHash = "";
         hash = "";
@@ -55,7 +55,7 @@ public class Block {
      * @throws TXNotEvenException    传入的 transaction 数量不是偶数时抛出
      * @throws NonceInvalidException 传入的 nonce 不满足难度要求时抛出
      */
-    public Block(int height, ArrayList<Transaction> data, long timestamp, String prevHash, int difficulty, int nonce)
+    public Block(int height, List<Transaction> data, long timestamp, String prevHash, int difficulty, int nonce)
             throws TXNotEvenException, NonceInvalidException, TXEmptyException, NoSuchAlgorithmException {
         this.height = height;
         this.data = data;
@@ -63,9 +63,6 @@ public class Block {
         this.prevHash = prevHash;
         this.difficulty = difficulty;
         this.nonce = nonce;
-        if (this.data.size() == 0) {
-            throw new TXEmptyException();
-        }
         updateMerkleRoot();
         updateBlockHash();
     }
@@ -112,7 +109,7 @@ public class Block {
      *
      * @return transaction 数组
      */
-    public ArrayList<Transaction> getData() {
+    public List<Transaction> getData() {
         return data;
     }
 
@@ -260,8 +257,7 @@ public class Block {
         if (data.isEmpty()) {
             throw new TXEmptyException();
         }
-        @SuppressWarnings("unchecked")
-        ArrayList<Transaction> txs = (ArrayList<Transaction>) data.clone();
+        List<Transaction> txs = new ArrayList<>(data);
         int pow = 0;
         while (Math.pow(2, pow) < txs.size()) {
             pow += 1;
