@@ -51,7 +51,7 @@ class HttpServer @JvmOverloads constructor(
      * Suspend till server is started.
      */
     suspend fun start() = suspendCoroutine {
-        log.info("Starting server")
+        log.info("Starting server at port $port")
         app = Javalin
             //===========================================//
             // Configuration
@@ -126,11 +126,6 @@ class HttpServer @JvmOverloads constructor(
                     } else {
                         ctx.json(transaction)
                     }
-                }
-            }
-            .post(WalletService.TRANSACTION) { ctx ->
-                runBlocking {
-                    walletController.newTransaction(ctx.bodyAsClass(Transaction::class.java))
                 }
             }
             .get(WalletService.UTXO) { ctx ->

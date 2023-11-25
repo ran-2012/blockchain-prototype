@@ -38,7 +38,7 @@ public class MiningService {
     }
 
     public void start() {
-        log.info("Starting mining service");
+        log.info("Start mining");
 
         running.set(true);
         mined.set(false);

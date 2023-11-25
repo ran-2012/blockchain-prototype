@@ -9,7 +9,6 @@ import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 import blockchain.data.core.TransactionInput;
 import blockchain.data.core.TransactionOutput;
-import blockchain.data.exceptions.AlreadyMinedException;
 import blockchain.network.INetwork;
 import blockchain.network.Network;
 import blockchain.storage.IStorage;
@@ -65,7 +64,7 @@ public class BlockService {
 
         if (checkTransactionPool()) {
             List<Transaction> list = pollTransaction();
-            Block block = generateNewBlock(list);
+            Block block = generatePreMinedBlock(list);
             startMining(block);
         }
         scheduleCheckTransactionPool();
@@ -77,7 +76,6 @@ public class BlockService {
 
     public BlockService(boolean isMiner, String publicKey) {
         this.isMiner = isMiner;
-        assert !publicKey.isEmpty();
         this.publicKey = publicKey;
         this.address = Hash.hashString(publicKey);
 
@@ -89,8 +87,23 @@ public class BlockService {
         log.info("Starting block service");
 
         running.set(true);
-        if (isMiner) {
 
+        // Remove transaction and utxo
+        storage.cleanCache();
+
+        Map<Long, Block> blockAll = storage.getBlockAll();
+        log.info("Loading block, count: {}", blockAll.size());
+        for (long height : blockAll.keySet()) {
+            Block block = blockAll.get(height);
+            assert block != null;
+
+            updateCacheForBlock(block);
+        }
+        log.info("Blocks loaded");
+
+        if (isMiner) {
+            log.info("Start checking transaction pool");
+            assert !publicKey.isEmpty();
             miningService.setCallback(callback);
             scheduleCheckTransactionPool();
         }
@@ -138,7 +151,7 @@ public class BlockService {
         return storage.getTransactionAll();
     }
 
-    private int getDifficult(long timestamp) {
+    private int getDifficulty(long timestamp) {
         long nextHeight = storage.getHeight() + 1;
         // First block in block 0 (pre-generated)
         // Only adjust after 10 blocks
@@ -173,26 +186,26 @@ public class BlockService {
         return currentDifficulty;
     }
 
-    private Block generateNewBlock(List<Transaction> transactions) {
+    private Block generatePreMinedBlock(List<Transaction> transactions) {
+        log.debug("Pre-generate block with {} transactions", transactions.size());
+
         // Generate block here then mine
         Block block = new Block();
         block.setPrevHash(storage.getLastBlock().getHash());
         long timestamp = new Date().getTime();
         block.setTimestamp(timestamp);
-        block.setDifficulty(getDifficult(timestamp));
+        block.setDifficulty(getDifficulty(timestamp));
         long fee = 0;
         for (Transaction transaction : transactions) {
-            try {
-                block.addTransaction(transaction);
-                fee += transaction.fee;
-            } catch (AlreadyMinedException ignored) {
-            }
+            block.addTransaction(transaction);
+            fee += transaction.fee;
         }
-        TransactionOutput coinBaseOutput = new TransactionOutput(this.address, fee);
+        TransactionOutput coinBaseOutput = new TransactionOutput(this.address, fee + REWARD_PER_BLOCK);
         Transaction coinBaseTransaction = new Transaction(coinBaseOutput);
+        block.addTransaction(coinBaseTransaction);
+
         block.setNonce(0);
         block.setHeight(storage.getLastBlock().getHeight() + 1);
-        block.setHash(Hash.hashString(block.toString()));
         return block;
     }
 
@@ -227,6 +240,24 @@ public class BlockService {
             return false;
         }
         return true;
+    }
+
+    private void updateCacheForBlock(Block block) {
+        for (Transaction transaction : block.getData()) {
+            updateCacheForCompletedTransaction(transaction);
+        }
+    }
+
+    private void updateCacheForPendingTransaction(Transaction transaction) {
+        storage.removeUtxoFromTransactionInput(transaction);
+        storage.addPendingUtxoFromTransactionInput(transaction);
+        storage.addTransaction(transaction);
+    }
+
+    private void updateCacheForCompletedTransaction(Transaction transaction) {
+        storage.removeTransaction(transaction.hash);
+        storage.addUtxoFromTransactionOutput(transaction);
+        storage.removePendingUtxoFromTransactionInput(transaction);
     }
 
     /**
@@ -270,8 +301,11 @@ public class BlockService {
                 }
                 // Add block to database
                 storage.addBlock(block);
-            } else {
+                updateCacheForBlock(block);
 
+                log.info("New block added, height: {}", block.getHeight());
+            } else {
+                // TODO: Fetch blocks
             }
 
         }
@@ -299,9 +333,8 @@ public class BlockService {
                 return;
             }
 
-            storage.removeUtxoFromTransactionInput(transaction);
-            storage.addPendingUtxoFromTransactionInput(transaction);
-            storage.addTransaction(transaction);
+            updateCacheForPendingTransaction(transaction);
+            log.info("New transaction added to pool, hash: {}", transaction.hash);
         }
 
         // Revert last block in database

@@ -25,7 +25,12 @@ public class Config {
                 return new Config();
             }
             FileReader fileReader = new FileReader(file);
-            return gson.fromJson(fileReader, Config.class);
+            Config config = gson.fromJson(fileReader, Config.class);
+            fileReader.close();
+            if (config == null) {
+                return new Config();
+            }
+            return config;
         } catch (Exception e) {
             e.printStackTrace();
             throw new RuntimeException(e);
@@ -38,6 +43,8 @@ public class Config {
             file.createNewFile();
             FileWriter fileWriter = new FileWriter(file);
             fileWriter.write(gson.toJson(config));
+            fileWriter.flush();
+            fileWriter.close();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

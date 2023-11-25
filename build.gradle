@@ -41,6 +41,10 @@ kotlin {
     jvmToolchain(java_target_version)
 }
 
+jar {
+    duplicatesStrategy(DuplicatesStrategy.EXCLUDE)
+}
+
 application {
     mainClass = "MainKt"
 }

@@ -4,6 +4,7 @@ import blockchain.data.core.Transaction;
 import blockchain.data.core.TransactionInput;
 import blockchain.data.core.TransactionOutput;
 import blockchain.utility.Hash;
+import blockchain.utility.Json;
 import blockchain.utility.Log;
 import blockchain.utility.Rsa;
 import picocli.CommandLine.Command;
@@ -39,7 +40,7 @@ public class Cli {
     public int list() {
         for (int i = 0; i < config.list.size(); ++i) {
             Config.Pair pair = config.list.get(i);
-            System.out.printf("%d. %s", i + 1, pair.pk.substring(0, 19));
+            System.out.printf("%d. %s\n", i + 1, pair.address.substring(0, 19));
         }
         return 0;
     }
@@ -65,12 +66,26 @@ public class Cli {
         return 0;
     }
 
+    @Command(name = "transfer-idx", description = "Transfer money")
+    public int transferIdx(@Parameters(paramLabel = "SOURCE INDEX") int sourceIndex,
+                           @Parameters(paramLabel = "TARGET INDEX") int targetIndex,
+                           @Parameters(paramLabel = "VALUE") long value) {
+        Config.Pair pair = config.list.get(targetIndex);
+        if (pair == null) {
+            throw new IllegalArgumentException("Invalid target index");
+        }
+        transfer(sourceIndex, config.list.get(targetIndex).address, value);
+        return 0;
+    }
+
     @Command(name = "transfer", description = "Transfer money to target address")
     public int transfer(@Parameters(paramLabel = "SOURCE INDEX") int addressIndex,
                         @Parameters(paramLabel = "TARGET") String targetAddress,
                         @Parameters(paramLabel = "VALUE") long value) {
-
         Config.Pair pair = config.list.get(addressIndex);
+        if (pair == null) {
+            throw new IllegalArgumentException("Invalid source index");
+        }
         String sourceAddress = pair.address;
         try {
             Transaction transaction = client.getTransaction(sourceAddress, targetAddress, value);

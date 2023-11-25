@@ -8,10 +8,17 @@ import kotlinx.coroutines.runBlocking
 class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap: Map<String, String> = HashMap()) :
     INetwork {
 
+
     private val server: HttpServer = HttpServer(serverPort)
     private val broadcaster: Broadcaster = Broadcaster(initialPeerMap)
 
     private var callback = Callback()
+
+    init {
+        runBlocking {
+            server.start()
+        }
+    }
 
     override fun registerCallback(callback: Callback) {
         this.callback = callback

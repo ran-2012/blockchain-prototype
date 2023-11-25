@@ -12,7 +12,7 @@ import org.apache.logging.log4j.core.config.builder.api.ConfigurationBuilderFact
 import org.apache.logging.log4j.core.config.builder.impl.BuiltConfiguration;
 
 public class Log {
-    static {
+    private static void init(String tag) {
         ConfigurationBuilder<BuiltConfiguration> builder = ConfigurationBuilderFactory.newConfigurationBuilder();
         builder.setStatusLevel(Level.ERROR);
         builder.setConfigurationName("BuilderTest");
@@ -22,7 +22,7 @@ public class Log {
                 builder.newAppender("Stdout", "CONSOLE")
                         .addAttribute("target", ConsoleAppender.Target.SYSTEM_OUT);
         appenderBuilder.add(builder.newLayout("PatternLayout")
-                .addAttribute("pattern", "%d{yyyy-MM-dd HH:mm:ss.SSS} [%-1level] [%t]: %msg%n%throwable"));
+                .addAttribute("pattern", "[" + tag + "] %d{yyyy-MM-dd HH:mm:ss.SSS} [%-1level] [%t]: %msg%n%throwable"));
         appenderBuilder.add(builder.newFilter("MarkerFilter", Filter.Result.DENY, Filter.Result.NEUTRAL)
                 .addAttribute("marker", "FLOW"));
         builder.add(appenderBuilder);
@@ -72,6 +72,11 @@ public class Log {
 
     public void error(String message, Object... params) {
         logger.error(message, params);
+    }
+
+
+    public static void setTag(String tag) {
+        init(tag);
     }
 
     public static Log get(String name) {

@@ -10,17 +10,17 @@ import retrofit2.http.Query
 
 interface WalletService {
 
-    @GET(Companion.TRANSACTION)
+    @GET(TRANSACTION)
     suspend fun getTransaction(
         @Query(PARAM_SOURCE_ADDRESS) sourceAddress: String,
         @Query(PARAM_TARGET_ADDRESS) targetAddress: String,
         @Query(PARAM_VALUE) value: Long
     ): Transaction?
 
-    @POST(Companion.TRANSACTION)
+    @POST(TRANSACTION)
     suspend fun newTransaction(@Body transaction: Transaction)
 
-    @GET(Companion.UTXO)
+    @GET(UTXO)
     suspend fun getUtxo(@Query(PARAM_ADDRESS) address: String): List<TransactionInput>
 
     companion object {

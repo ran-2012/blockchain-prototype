@@ -46,7 +46,6 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
 
     private lateinit var blockCollection: MongoCollection<Block>
     private lateinit var transactionCollection: MongoCollection<Transaction>
-    private lateinit var utxoCollection: MongoCollection<Transaction>
 
     init {
         database = client.getDatabase(dataBaseName)
@@ -55,17 +54,12 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
     suspend fun initCollection() {
         database.createCollection(DB_BLOCK)
         database.createCollection(DB_TRANSACTION)
-        database.createCollection(DB_UTXO)
 
         blockCollection = database.getCollection(DB_BLOCK)
         transactionCollection = database.getCollection(DB_TRANSACTION)
-        utxoCollection = database.getCollection(DB_UTXO)
     }
 
     suspend fun initSchema() {
-//        val blockIndexes = ArrayList<Document>()
-//        blockCollection.listIndexes().toCollection(blockIndexes)
-
         blockCollection.createIndex(Indexes.ascending(FIELD_HEIGHT))
         blockCollection.createIndex(Indexes.text(FIELD_HASH))
 
@@ -87,9 +81,5 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
 
     fun transaction(): MongoCollection<Transaction> {
         return transactionCollection
-    }
-
-    fun utxo(): MongoCollection<Transaction> {
-        return utxoCollection
     }
 }

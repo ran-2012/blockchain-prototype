@@ -9,15 +9,21 @@ import java.util.HashMap;
 
 public class Main {
     public static void main(String[] args) {
-        Log log = Log.get("Mining");
-
         Config config = new Config();
         JCommander.newBuilder()
                 .addObject(config)
                 .build()
                 .parse(args);
 
+        Log.setTag(config.name);
+
+        Log log = Log.get("Mining");
         log.info("Starting Node: {}, at port: {}, enable mining: {}", config.name, config.port, config.isMiner);
+
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            log.error("Unhandled exception in thread: {}", t.getName());
+            log.error(e);
+        });
 
         Storage.initialize(config.name);
 
@@ -33,6 +39,8 @@ public class Main {
             log.warn("Exiting, node: {}", config.name);
             service.stop();
         }));
+
+        service.start();
 
         while (true) {
             try {

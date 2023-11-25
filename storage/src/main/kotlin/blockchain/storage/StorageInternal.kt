@@ -233,4 +233,11 @@ class StorageInternal(dbName: String) : IStorage {
     override fun getHeight(): Long {
         return lastBlock.height
     }
+
+    override fun cleanCache() {
+        redisClient.cleanUp()
+        runBlocking {
+            client.transaction().deleteMany(Document())
+        }
+    }
 }

@@ -126,16 +126,9 @@ public class Block {
      * 向区块内添加一个 transaction，仅限尚未完成挖矿的区块
      *
      * @param tx 要添加的 transaction
-     * @return 是否添加成功
-     * @throws AlreadyMinedException 区块已完成挖矿时抛出
      */
-    public boolean addTransaction(Transaction tx) throws AlreadyMinedException {
-        if (hash.isEmpty()) {
-            data.add(tx);
-            return true;
-        } else {
-            throw new AlreadyMinedException();
-        }
+    public void addTransaction(Transaction tx) {
+        data.add(tx);
     }
 
     /**

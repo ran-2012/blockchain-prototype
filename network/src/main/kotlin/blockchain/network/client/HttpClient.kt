@@ -16,6 +16,7 @@ class HttpClient(baseUrl: String) {
     companion object {
         const val TIMEOUT: Long = 1 // Second
 
+        @JvmField
         val okhttpClient = OkHttpClient.Builder()
             .connectionPool(ConnectionPool(10, 10, TimeUnit.MINUTES))
             .connectTimeout(TIMEOUT, TimeUnit.SECONDS)
@@ -28,7 +29,9 @@ class HttpClient(baseUrl: String) {
         .client(okhttpClient)
         .build()
 
+    @JvmField
     val peerService: PeerService = retrofit.create(PeerService::class.java)
+    @JvmField
     val walletService = retrofit.create(WalletService::class.java)
     fun test() {
         val retrofit = Retrofit.Builder()

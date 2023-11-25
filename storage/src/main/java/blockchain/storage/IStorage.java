@@ -69,6 +69,10 @@ public interface IStorage {
 
     Set<TransactionInput> getPendingUtxoAll();
 
-
     long getHeight();
+
+    /**
+     * Remove all transaction and utxo
+     */
+    void cleanCache();
 }
