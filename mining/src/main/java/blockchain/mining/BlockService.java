@@ -114,9 +114,9 @@ public class BlockService {
 
 
             if (timeDelta / TARGET_TIME > 1) {
-                currentDifficulty -= (int) (timeDelta / TARGET_TIME);
+                currentDifficulty -= (int) (Math.log((double) timeDelta / TARGET_TIME) / Math.log(2));
             } else if (TARGET_TIME / timeDelta > 1) {
-                currentDifficulty += (int) (TARGET_TIME / timeDelta);
+                currentDifficulty += (int) (Math.log((double) TARGET_TIME / timeDelta) / Math.log(2));
             }
         }
         return currentDifficulty;
