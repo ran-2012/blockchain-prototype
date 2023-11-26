@@ -15,7 +15,7 @@ public class Config {
     public String name = "0";
 
     @Parameter(names = {"--mine"}, description = "Enable mining")
-    public boolean isMiner = true;
+    public boolean isMiner = false;
 
     @Parameter(names = {"--port"}, description = "Local http port")
     public int port = 7070;
@@ -24,5 +24,5 @@ public class Config {
     public List<String> peers = new ArrayList<>();
 
     @Parameter(names = "--public-key", description = "Public key used in node")
-    public String publicKey = DEFAULT_PUBLIC_KEY;
+    public String publicKey = "";
 }

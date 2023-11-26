@@ -388,6 +388,7 @@ public class BlockService {
         @Override
         public void onNewBlockMined(Block block) {
             log.info("New block mined, height: {}, hash: {}", block.getHeight(), block.getHash());
+            log.info("Nonce: {}", block.getNonce());
             log.info("Time used: {} ms", System.currentTimeMillis() - block.getTimestamp());
             addNewBlock(block);
             network.newBlock(block);
@@ -420,9 +421,6 @@ public class BlockService {
 
         @Override
         public void onNewBlockReceived(Block data) {
-            if (miningService.getBlock().getHeight() == data.getHeight()) {
-                miningService.stop();
-            }
             addNewBlock(data);
         }
 
