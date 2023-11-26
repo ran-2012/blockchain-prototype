@@ -26,4 +26,11 @@ public class HashTest {
 
         Assertions.assertEquals(7, result);
     }
+
+    @Test
+    void hexTest() {
+        String testStr = "123a98703a3f";
+        byte[] bytes = Hex.toBytes(testStr);
+        Assertions.assertEquals(testStr, Hex.toString(bytes));
+    }
 }

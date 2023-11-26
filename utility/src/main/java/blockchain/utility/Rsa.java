@@ -176,7 +176,7 @@ public class Rsa {
         //返回签名结果字节数组
         byte[] sign = signature.sign();
         //返回Base64编码后的字符串
-        return Base64.getEncoder().encodeToString(sign);
+        return Hex.toString(sign);
     }
 
     public static String sign(String data, String privateKey) {

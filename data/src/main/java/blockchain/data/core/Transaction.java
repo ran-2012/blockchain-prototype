@@ -39,6 +39,8 @@ public class Transaction {
     }
 
     public Transaction(String sourceAddress, String targetAddress, List<TransactionInput> txInputs, List<TransactionOutput> txOutputs) {
+        this.sourceAddress = sourceAddress;
+        this.targetAddress = targetAddress;
         this.inputs = txInputs;
         this.outputs = txOutputs;
         this.timestamp = System.currentTimeMillis();

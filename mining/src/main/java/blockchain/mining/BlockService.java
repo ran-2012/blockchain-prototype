@@ -216,7 +216,7 @@ public class BlockService {
 
     private boolean checkUtxo(Transaction transaction) {
         for (TransactionInput input : transaction.inputs) {
-            if (!storage.hasUtxo(input)) {
+            if (storage.hasUtxo(input)) {
                 log.warn("Utxo {} is already in use", input);
                 return false;
             }
@@ -329,8 +329,9 @@ public class BlockService {
                     return;
                 }
             } catch (Exception e) {
-                log.error(e);
-                return;
+                log.warn(e);
+                e.printStackTrace();
+                log.warn("Unable to verify transaction {}", transaction.hash);
             }
 
             updateCacheForPendingTransaction(transaction);

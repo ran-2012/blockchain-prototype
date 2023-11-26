@@ -138,14 +138,17 @@ public class Cli {
                 input.signature = Rsa.sign(input, privateKey);
             }
         }
+        transaction.sourcePublicKey = publicKey;
         transaction.outputSignature = Rsa.sign(transaction.outputHash, privateKey);
     }
 
     @Command(name = "balance", description = {"Query balance"})
     public int balance(@Parameters(paramLabel = "ADDRESS INDEX") int addressIndex) {
         String sourceAddress = config.list.get(addressIndex).address;
+        log.debug("Address: {}", sourceAddress);
         try {
             List<TransactionInput> list = client.getUtxoList(sourceAddress);
+            log.debug("Utxo count: {}", list.size());
             long balance = 0;
             for (TransactionInput utxo : list) {
 
