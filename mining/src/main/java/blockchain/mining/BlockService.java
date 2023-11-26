@@ -267,7 +267,7 @@ public class BlockService {
     private void initCacheForCompletedTransaction(Transaction transaction) {
         storage.removeTransaction(transaction.hash);
         storage.addUtxoFromTransactionOutput(transaction);
-        storage.removePendingUtxoFromTransactionInput(transaction);
+        storage.removeUtxoFromTransactionInput(transaction);
     }
 
     /**
@@ -330,7 +330,7 @@ public class BlockService {
 
             log.info("Add block from height {} to {}", targetHeight + 1, block.getHeight());
             // Some previous transaction may be requried to revert
-            List<Transaction> preTransactionList = storage.getTransactionAll();
+//            List<Transaction> preTransactionList = storage.getTransactionAll();
             // Add blocks on the longer chain from peers
             for (long height = targetHeight + 1; height <= block.getHeight(); ++height) {
                 Block blockToAdd = blockToAddList.get(height);
@@ -339,23 +339,26 @@ public class BlockService {
                 log.info("Add block height: {}, hash: {}", blockToAdd.getHeight(), blockToAdd.getHash());
                 storage.addBlock(blockToAdd);
                 for (Transaction transaction : blockToAdd.getData()) {
-                    initCacheForCompletedTransaction(transaction);
+                    storage.removeTransaction(transaction.hash);
+                    storage.addUtxoFromTransactionOutput(transaction);
+                    storage.removeUtxoFromTransactionInput(transaction);
+                    storage.removePendingUtxoFromTransactionInput(transaction);
 
-                    // Completed transaction from other peers may contain utxo already used
-                    Set<String> usedSet = new HashSet<>();
-                    for (TransactionInput usedInput : transaction.inputs) {
-                        usedSet.add(usedInput.originalTxHash + usedInput.originalOutputIndex);
-                    }
-                    for (Transaction tx : preTransactionList) {
-                        for (TransactionInput input : tx.inputs) {
-                            // If transaction in pool shared a utxo with completed tx, revert the tx in the pool
-                            if (usedSet.contains(input.originalTxHash + input.originalTxHash)) {
-                                storage.removeTransaction(tx.hash);
-                                storage.removePendingUtxoFromTransactionInput(tx);
-                                break;
-                            }
-                        }
-                    }
+//                    // Completed transaction from other peers may contain utxo already used
+//                    Set<String> usedSet = new HashSet<>();
+//                    for (TransactionInput usedInput : transaction.inputs) {
+//                        usedSet.add(usedInput.originalTxHash + usedInput.originalOutputIndex);
+//                    }
+//                    for (Transaction tx : preTransactionList) {
+//                        for (TransactionInput input : tx.inputs) {
+//                            // If transaction in pool shared a utxo with completed tx, revert the tx in the pool
+//                            if (usedSet.contains(input.originalTxHash + input.originalTxHash)) {
+//                                storage.removeTransaction(tx.hash);
+//                                storage.removePendingUtxoFromTransactionInput(tx);
+//                                break;
+//                            }
+//                        }
+//                    }
                 }
             }
         }
@@ -425,11 +428,15 @@ public class BlockService {
 
             storage.removeBlock();
 
-            // Add transactions back into the pool
-            List<Transaction> transactions = block.getData();
-            for (Transaction transaction : transactions) {
-                revertTransactionFromBlock(transaction);
-            }
+//            // Add transactions back into the pool
+//            List<Transaction> transactions = block.getData();
+//            for (Transaction transaction : transactions) {
+//                if (transaction.isCoinbase()) {
+//                    storage.removeUtxoFromTransactionOutput(transaction);
+//                    continue;
+//                }
+//                revertTransactionFromBlock(transaction);
+//            }
         }
 
         // Put transactions back to the pool
@@ -458,6 +465,7 @@ public class BlockService {
             log.info("Nonce: {}", block.getNonce());
             log.info("Time used: {} ms", System.currentTimeMillis() - block.getTimestamp());
             addNewBlock(block);
+            log.debug("Broadcasting new block");
             network.newBlock(block);
         }
 
@@ -481,8 +489,17 @@ public class BlockService {
             return generateNewTransaction(sourceAddress, targetAddress, value);
         }
 
+        Set<String> receivedTransaction = new HashSet<>();
+
         @Override
         public void onSignedTransactionReceived(Transaction transaction) {
+            log.info("New transaction received, hash: {}", transaction.hash);
+            if (!receivedTransaction.contains(transaction.hash)) {
+                log.debug("Broadcasting new transaction");
+                network.newTransaction(transaction);
+                receivedTransaction.add(transaction.hash);
+            }
+
             // verification is in Internal.addNewTransaction
             addNewTransaction(transaction);
         }

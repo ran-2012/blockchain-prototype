@@ -155,6 +155,9 @@ public class Cli {
         try {
             List<TransactionInput> list = client.getUtxoList(sourceAddress);
             log.debug("Utxo count: {}", list.size());
+            for (TransactionInput input : list) {
+                log.debug("Utxo origin hash {}, idx {}", input.originalTxHash, input.originalOutputIndex);
+            }
             long balance = 0;
             for (TransactionInput utxo : list) {
 

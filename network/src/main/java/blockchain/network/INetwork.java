@@ -13,6 +13,8 @@ public interface INetwork {
 
     void newBlock(Block block);
 
+    void newTransaction(Transaction transaction);
+
     Map<String, Block> getBlock(String hash);
 
     Map<String, Map<Long, Block>> getBlockRange(Long heightMin, Long heightMax);
@@ -21,6 +23,7 @@ public interface INetwork {
         public void onNewBlockReceived(Block data) {
 
         }
+
         public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
             return null;
         }

@@ -44,7 +44,8 @@ public interface IStorage {
 
     void removeTransaction(String hash);
 
-    List<Transaction> getTransaction(String sourceAddress);
+    @Nullable
+    Transaction getTransaction(String sourceAddress);
 
     List<Transaction> getTransactionAll();
 

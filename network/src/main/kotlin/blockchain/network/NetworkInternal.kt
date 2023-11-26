@@ -1,6 +1,7 @@
 package blockchain.network
 
 import blockchain.data.core.Block
+import blockchain.data.core.Transaction
 import blockchain.network.INetwork.Callback
 import blockchain.network.server.HttpServer
 import kotlinx.coroutines.runBlocking
@@ -35,6 +36,12 @@ class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap:
     override fun newBlock(block: Block) {
         runBlocking {
             broadcaster.newBlock(block)
+        }
+    }
+
+    override fun newTransaction(transaction: Transaction) {
+        runBlocking {
+            broadcaster.newTransaction(transaction)
         }
     }
 

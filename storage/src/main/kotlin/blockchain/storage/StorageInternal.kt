@@ -9,13 +9,13 @@ import blockchain.utility.Log
 import com.mongodb.client.model.Filters
 import com.mongodb.client.model.Sorts
 import kotlinx.coroutines.flow.single
+import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.bson.conversions.Bson
 import org.jetbrains.annotations.Nullable
 import org.jetbrains.annotations.TestOnly
 import java.lang.Exception
-import java.lang.RuntimeException
 
 class StorageInternal(dbName: String) : IStorage {
 
@@ -137,14 +137,10 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun getTransaction(sourceAddress: String): MutableList<Transaction> {
-        val list = ArrayList<Transaction>()
-        runBlocking {
-            client.transaction().find(Filters.eq(DataBaseClient.FIELD_SOURCE_ADDRESS, sourceAddress)).collect {
-                list.add(it)
-            }
+    override fun getTransaction(hash: String): Transaction? {
+        return runBlocking {
+            client.transaction().find(Filters.eq(DataBaseClient.FIELD_HASH, hash)).singleOrNull()
         }
-        return list
     }
 
     override fun getTransactionAll(): MutableList<Transaction> {
