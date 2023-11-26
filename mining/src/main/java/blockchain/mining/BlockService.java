@@ -36,7 +36,7 @@ public class BlockService {
     public static long CHECK_TRANSACTION_POOL_INTERVAL = 1_000; // ms
 
     public static long TARGET_TIME_PER_BLOCK = 5_000; // ms
-    public static int DEFAULT_DIFFICULTY = 20;
+    public static int DEFAULT_DIFFICULTY = 16;
     public static int ADJUST_DIFFICULTY_BLOCK_INTERVAL = 10;
     public static long TARGET_TIME = TARGET_TIME_PER_BLOCK * ADJUST_DIFFICULTY_BLOCK_INTERVAL;
 
@@ -203,6 +203,7 @@ public class BlockService {
         TransactionOutput coinBaseOutput = new TransactionOutput(this.address, fee + REWARD_PER_BLOCK);
         Transaction coinBaseTransaction = new Transaction(coinBaseOutput);
         block.addTransaction(coinBaseTransaction);
+        block.updateMerkleRoot();
 
         block.setNonce(0);
         block.setHeight(storage.getLastBlock().getHeight() + 1);
@@ -290,7 +291,8 @@ public class BlockService {
             try {
                 block.validate();
             } catch (Exception e) {
-                log.error("Invalid block: hash mismatch");
+                log.warn("Invalid block: hash mismatch");
+                log.warn(e);
                 return;
             }
             if (block.getHeight() == storage.getHeight() + 1) {
@@ -385,12 +387,16 @@ public class BlockService {
     private final MiningService.Callback callback = new MiningService.Callback() {
         @Override
         public void onNewBlockMined(Block block) {
+            log.info("New block mined, height: {}, hash: {}", block.getHeight(), block.getHash());
+            log.info("Time used: {} ms", System.currentTimeMillis() - block.getTimestamp());
             addNewBlock(block);
             network.newBlock(block);
         }
 
         @Override
         public void onAllNonceTried(Block block) {
+            log.error("How is this possible?");
+            System.exit(-1);
             // Empty
             // Unlikely to use up all nonce
         }

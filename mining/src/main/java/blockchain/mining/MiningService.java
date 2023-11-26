@@ -30,7 +30,7 @@ public class MiningService {
     private Callback callback;
 
     public boolean isRunning() {
-        return running.get();
+        return running.get() && !mined.get();
     }
 
     public Block getBlock() {
@@ -45,8 +45,14 @@ public class MiningService {
         nonce.set(0);
 
         executor.execute(() -> {
+            assert block != null;
+            assert callback != null;
+
             while (running.get() && !mined.get()) {
                 tryMine(nonce.get());
+                if (nonce.get() % 1000 == 0) {
+                    log.debug("Nonce {}", nonce.get());
+                }
                 if (nonce.incrementAndGet() == Long.MAX_VALUE) {
                     log.warn("All nonce used, stop mining");
                     running.set(false);
@@ -61,15 +67,9 @@ public class MiningService {
     }
 
     private void tryMine(long nonce) {
-        assert block != null;
-        assert callback != null;
-
-        try {
-            if (block.mineBlock(nonce)) {
-                mined.set(true);
-                callback.onNewBlockMined(block);
-            }
-        } catch (TXEmptyException ignored) {
+        if (block.mineBlock(nonce)) {
+            mined.set(true);
+            callback.onNewBlockMined(block);
         }
     }
 

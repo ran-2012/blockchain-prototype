@@ -243,12 +243,10 @@ public class Block {
 
     /**
      * 更新区块 merkle tree root 值
-     *
-     * @throws TXEmptyException 区块内 TX 为空时抛出
      */
-    public void updateMerkleRoot() throws TXEmptyException {
+    public void updateMerkleRoot() {
         if (data.isEmpty()) {
-            throw new TXEmptyException();
+            merkleRoot = "";
         }
         List<Transaction> txs = new ArrayList<>(data);
         int pow = 0;
@@ -310,12 +308,10 @@ public class Block {
      *
      * @param nonce 随机值
      * @return 是否成功
-     * @throws TXEmptyException 传入的 transaction 为空时抛出
      */
-    public boolean mineBlock(long nonce) throws TXEmptyException {
+    public boolean mineBlock(long nonce) {
         this.nonce = nonce;
 
-        updateMerkleRoot();
         Map<String, Object> hashResult = getHeaderHashMap();
         if (hashResult == null) return false;
         if ((int) (hashResult.get("NumOfZero")) >= difficulty) {
