@@ -16,6 +16,7 @@ fun main(args: Array<String>) {
     val log = Log.get("Mining")
 
     log.info("Starting Node: {}, at port: {}, enable mining: {}", config.name, config.port, config.isMiner)
+    log.info("Peer list: {}", config.peers)
 
     Thread.setDefaultUncaughtExceptionHandler { t: Thread, e: Throwable ->
         log.error("Unhandled exception in thread: {}", t.name)

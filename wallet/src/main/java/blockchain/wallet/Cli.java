@@ -33,6 +33,7 @@ public class Cli {
     public int generate() {
         config.list.add(Config.generateNewPair());
         Config.save(this.config);
+        System.exit(0);
         return 0;
     }
 
@@ -42,6 +43,7 @@ public class Cli {
             Config.Pair pair = config.list.get(i);
             System.out.printf("%d. %s\n", i + 1, pair.address.substring(0, 19));
         }
+        System.exit(0);
         return 0;
     }
 
@@ -53,6 +55,7 @@ public class Cli {
         pair.pk = publicKey;
         config.list.add(pair);
         Config.save(config);
+        System.exit(0);
         return 0;
     }
 
@@ -63,6 +66,7 @@ public class Cli {
         }
         config.list.remove(index);
         Config.save(config);
+        System.exit(0);
         return 0;
     }
 
@@ -75,6 +79,7 @@ public class Cli {
             throw new IllegalArgumentException("Invalid target index");
         }
         transfer(sourceIndex, config.list.get(targetIndex).address, value);
+        System.exit(0);
         return 0;
     }
 
@@ -98,6 +103,7 @@ public class Cli {
             log.error(e.getMessage());
             throw e;
         }
+        System.exit(0);
         return 0;
     }
 
@@ -159,6 +165,7 @@ public class Cli {
             log.error(e.getMessage());
             throw e;
         }
+        System.exit(0);
         return 0;
     }
 }

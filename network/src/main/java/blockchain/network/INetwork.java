@@ -21,19 +21,6 @@ public interface INetwork {
         public void onNewBlockReceived(Block data) {
 
         }
-
-        public Block onBlockWithHashRequested(String hash) {
-            return null;
-        }
-
-        public Block onBlockWithHeightRequested(Long height) {
-            return null;
-        }
-
-        public Map<Long, Block> onBlockRangeRequested(Long heightMin, Long heightMax) {
-            return new HashMap<>();
-        }
-
         public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
             return null;
         }

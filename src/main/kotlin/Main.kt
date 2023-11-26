@@ -79,7 +79,7 @@ fun main(args: Array<String>) {
 
     val portBase = 7070
     val nodeCount = 2
-    val minerCount = 1
+    val minerCount = 2
     val nodes: MutableList<Process> = ArrayList()
 
     val config = Config.load()
@@ -114,7 +114,6 @@ fun main(args: Array<String>) {
         nodes.add(process)
     }
 
-    Runtime.getRuntime().exec("javac")
     Runtime.getRuntime().addShutdownHook(Thread {
         log.warn("Stopping all nodes")
 

@@ -57,7 +57,7 @@ class HttpServer @JvmOverloads constructor(
             // Configuration
             .create { config ->
                 config.requestLogger.http { ctx, _ ->
-                    log.debug("Request received, url: {}", ctx.url())
+                    log.debug("Request received, method: {}, url: {}", ctx.method(), ctx.url())
                 }
                 config.jsonMapper(JavalinGson())
                 config.jetty.server {

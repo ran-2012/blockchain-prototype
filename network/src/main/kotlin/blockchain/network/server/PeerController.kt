@@ -36,17 +36,21 @@ class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callba
 
     override suspend fun getBlockWithHash(hash: String): Block? {
         val block = scope.async {
-            try {
+            val block = try {
                 Storage.getInstance().getBlock(hash)
             } catch (e: Exception) {
                 e.printStackTrace()
                 null
             }
+            if (block == null) {
+                log.warn("Block, hash: {} not found", hash)
+            }
+            block
         }
         return block.await()
     }
 
-    override suspend fun getBlockRange(min: Long, max: Long): Map<Long,Block> {
+    override suspend fun getBlockRange(min: Long, max: Long): Map<Long, Block> {
         val result = scope.async {
             try {
                 Storage.getInstance().getBlockRange(min, max)

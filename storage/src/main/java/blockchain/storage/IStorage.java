@@ -37,6 +37,7 @@ public interface IStorage {
     @Nullable
     Block getBlock(String hash);
 
+    @Nullable
     Block getLastBlock();
 
     void addTransaction(Transaction data);

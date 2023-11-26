@@ -12,6 +12,7 @@ import kotlinx.coroutines.flow.single
 import kotlinx.coroutines.runBlocking
 import org.bson.Document
 import org.bson.conversions.Bson
+import org.jetbrains.annotations.Nullable
 import org.jetbrains.annotations.TestOnly
 import java.lang.Exception
 import java.lang.RuntimeException
@@ -107,20 +108,20 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun getLastBlock(): Block {
+    @Nullable
+    override fun getLastBlock(): Block? {
         return synchronized(lastBlockLock) {
             if (_lastBlock == null) {
                 runBlocking {
                     try {
                         _lastBlock =
                             client.block().find().sort(Sorts.descending(DataBaseClient.FIELD_HEIGHT)).limit(1).single()
-                    } catch (e: Exception) {
-                        log.error(e)
-                        throw RuntimeException(e)
+                    } catch (ignored: Exception) {
+                        null
                     }
                 }
             }
-            _lastBlock!!
+            _lastBlock
         }
     }
 
@@ -231,7 +232,7 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     override fun getHeight(): Long {
-        return lastBlock.height
+        return lastBlock!!.height
     }
 
     override fun cleanCache() {

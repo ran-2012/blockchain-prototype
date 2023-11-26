@@ -139,13 +139,13 @@ class StorageInternalTest {
     fun getLastBlock() {
         storageInternal.addBlock(createBlock(1, "1"))
         storageInternal.addBlock(createBlock(2, "2"))
-        var block = storageInternal.lastBlock
+        var block = storageInternal.lastBlock!!
 
         Assertions.assertEquals(2, block.height)
         Assertions.assertEquals("2", block.hash)
 
         storageInternal.removeBlock()
-        block = storageInternal.lastBlock
+        block = storageInternal.lastBlock!!
 
         Assertions.assertEquals(1, block.height)
         Assertions.assertEquals("1", block.hash)
