@@ -20,7 +20,6 @@ public class Cli {
 
     public static String CONFIG_NAME = "wallet.json";
 
-
     private Config config;
     private final HttpClientWrapper client;
 
@@ -60,7 +59,7 @@ public class Cli {
     }
 
     @Command(name = "delete", description = "Delete key")
-    public int delete(@Parameters(paramLabel = "ADDRESS INDEX") int index) {
+    public int delete(@Parameters(paramLabel = "ADDRESS_INDEX") int index) {
         if (index > config.list.size() + 1) {
             throw new IllegalArgumentException("Index must be in valid range");
         }
@@ -71,8 +70,8 @@ public class Cli {
     }
 
     @Command(name = "transfer-idx", description = "Transfer money")
-    public int transferIdx(@Parameters(paramLabel = "SOURCE INDEX") int sourceIndex,
-                           @Parameters(paramLabel = "TARGET INDEX") int targetIndex,
+    public int transferIdx(@Parameters(paramLabel = "SOURCE_INDEX") int sourceIndex,
+                           @Parameters(paramLabel = "TARGET_INDEX") int targetIndex,
                            @Parameters(paramLabel = "VALUE") long value) {
         Config.Pair pair = config.list.get(targetIndex);
         if (pair == null) {
@@ -84,7 +83,7 @@ public class Cli {
     }
 
     @Command(name = "transfer", description = "Transfer money to target address")
-    public int transfer(@Parameters(paramLabel = "SOURCE INDEX") int addressIndex,
+    public int transfer(@Parameters(paramLabel = "SOURCE_INDEX") int addressIndex,
                         @Parameters(paramLabel = "TARGET") String targetAddress,
                         @Parameters(paramLabel = "VALUE") long value) {
         Config.Pair pair = config.list.get(addressIndex);
@@ -149,7 +148,7 @@ public class Cli {
     }
 
     @Command(name = "balance", description = {"Query balance"})
-    public int balance(@Parameters(paramLabel = "ADDRESS INDEX") int addressIndex) {
+    public int balance(@Parameters(paramLabel = "ADDRESS_INDEX") int addressIndex) {
         String sourceAddress = config.list.get(addressIndex).address;
         log.debug("Address: {}", sourceAddress);
         try {
