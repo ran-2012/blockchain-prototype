@@ -63,6 +63,7 @@
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.ow2.asm/asm/9.5/dc6ea1875f4d64fbc85e1691c95b96a3d8569c90/asm-9.5.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.squareup.okhttp3/okhttp/4.11.0/436932d695b2c43f2c86b8111c596179cd133d56/okhttp-4.11.0.jar" path-in-jar="/" />
       <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlinx/kotlinx-coroutines-reactive/1.7.3/3f30c8dd5cd0993ca2804591210141be762786f8/kotlinx-coroutines-reactive-1.7.3.jar" path-in-jar="/" />
+      <element id="dir-copy" path="$PROJECT_DIR$/mining/src/main/resources" />
     </root>
   </artifact>
 </component>

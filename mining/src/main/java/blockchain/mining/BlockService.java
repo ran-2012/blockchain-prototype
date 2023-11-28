@@ -493,12 +493,14 @@ public class BlockService {
 
         @Override
         public void onSignedTransactionReceived(Transaction transaction) {
-            log.info("New transaction received, hash: {}", transaction.hash);
             if (!receivedTransaction.contains(transaction.hash)) {
                 log.debug("Broadcasting new transaction");
                 network.newTransaction(transaction);
                 receivedTransaction.add(transaction.hash);
+            } else {
+                return;
             }
+            log.info("New transaction received, hash: {}", transaction.hash);
 
             // verification is in Internal.addNewTransaction
             addNewTransaction(transaction);
