@@ -67,17 +67,24 @@ Miner/transaction相关
 
 钱包
 
-## TODO
 
-- Wallet
-  - 新交易+签名 2步
+## 运行
 
-- Network 接口
+### 启动节点
 
-- Mining fork处理
+`java -jar main.jar`
 
-- UTXO
-  - data 数据
-  - storage 存储
-  - mining 维护
-- 
+可以设置启动的节点数量和矿工数量：
+
+`java -jar main.jar 6 2`，6个节点2个矿工
+
+### 钱包
+
+显示帮助：
+
+`java -jar wallet.jar`
+
+转账：
+
+`java -jar wallet.jar transfer-idx 0 1 1000`，从账户0转1000到账户1
+
