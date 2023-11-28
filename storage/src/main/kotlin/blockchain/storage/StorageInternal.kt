@@ -183,7 +183,7 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     override fun hasUtxo(utxo: TransactionInput): Boolean {
-        return redisClient.normal.exists("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
+        return redisClient.normal.existsUtxo("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
     }
 
     override fun getUtxoByAddress(address: String): Set<TransactionInput> {
@@ -220,7 +220,7 @@ class StorageInternal(dbName: String) : IStorage {
     }
 
     override fun hasPendingUtxo(utxo: TransactionInput): Boolean {
-        return redisClient.pending.exists("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
+        return redisClient.pending.existsUtxo("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
     }
 
     override fun getPendingUtxoAll(): Set<TransactionInput> {

@@ -41,8 +41,8 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
         }
 
 
-        fun exists(key: String): Boolean {
-            return jedis.exists(addPrefix(key))
+        fun existsUtxo(key: String): Boolean {
+            return jedis.exists(addPrefix(PREFIX_UTXO, key))
         }
 
         fun get(): Jedis {

@@ -232,7 +232,7 @@ public class BlockService {
 
     private boolean checkUtxo(Transaction transaction) {
         for (TransactionInput input : transaction.inputs) {
-            if (storage.hasUtxo(input)) {
+            if (!storage.hasUtxo(input)) {
                 log.warn("Utxo {} is already in use", input);
                 return false;
             }
