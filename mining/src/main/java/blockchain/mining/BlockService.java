@@ -179,13 +179,13 @@ public class BlockService {
             assert timeDelta > 0;
 
             if (timeDelta / TARGET_TIME > 1) {
-                currentDifficulty += (int) (Math.log((double) timeDelta / TARGET_TIME) / Math.log(2));
+                currentDifficulty -= (int) (Math.log((double) timeDelta / TARGET_TIME) / Math.log(2));
                 if (currentDifficulty < 0) {
                     currentDifficulty = 0;
                 }
                 log.debug("Difficulty changed to: {}", currentDifficulty);
             } else if (TARGET_TIME / timeDelta > 1) {
-                currentDifficulty -= (int) (Math.log((double) TARGET_TIME / timeDelta) / Math.log(2));
+                currentDifficulty += (int) (Math.log((double) TARGET_TIME / timeDelta) / Math.log(2));
                 log.debug("Difficulty changed to: {}", currentDifficulty);
             }
         }
