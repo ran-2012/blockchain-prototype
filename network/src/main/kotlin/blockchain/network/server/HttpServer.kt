@@ -75,21 +75,8 @@ class HttpServer @JvmOverloads constructor(
             //===========================================//
             // Peer interfaces
             .post(PeerService.BLOCKS) { ctx ->
-                val paramMap = ctx.pathParamMap()
-                if (paramMap.containsKey(PeerService.PARAM_MIN)) {
-                    val min = paramMap[PeerService.PARAM_MIN]!!.toLong()
-                    val max = if (paramMap.containsKey(PeerService.PARAM_MAX)) {
-                        paramMap[PeerService.PARAM_MAX]!!.toLong()
-                    } else {
-                        -1
-                    }
-                    runBlocking {
-                        ctx.json(peerController.getBlockRange(min, max))
-                    }
-                } else {
-                    runBlocking {
-                        peerController.newBlock(ctx.bodyAsClass(Block::class.java))
-                    }
+                runBlocking {
+                    peerController.newBlock(ctx.bodyAsClass(Block::class.java))
                 }
             }
             .get(PeerService.BLOCKS_WITH_HASH) { ctx ->

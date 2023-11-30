@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Diagram>
+  <ID>JAVA</ID>
+  <OriginalElement>E:/project/blockchain-prototype/utility</OriginalElement>
+  <nodes>
+    <node x="750.3670634920635" y="220.0">blockchain.network.server.WalletController</node>
+    <node x="-129.0" y="420.0">blockchain.storage.StorageInternal</node>
+    <node x="302.4920634920635" y="420.0">blockchain.mining.BlockService</node>
+    <node x="254.00000000000006" y="142.0">blockchain.data.core.Transaction</node>
+    <node x="327.08333333333337" y="64.0">blockchain.data.core.TransactionInput</node>
+    <node x="121.08333333333337" y="64.0">blockchain.data.core.TransactionOutput</node>
+    <node x="-129.0" y="493.0">blockchain.data.exceptions.MerkleTreeInvalidException</node>
+    <node x="1164.040909090909" y="192.0">blockchain.wallet.Config</node>
+    <node x="244.00000000000006" y="330.0">blockchain.mining.MiningService</node>
+    <node x="276.50000000000006" y="220.0">blockchain.data.core.Block</node>
+    <node x="192.50000000000006" y="-14.0">blockchain.data.core.TransactionInputOutputBase</node>
+    <node x="655.3333333333334" y="142.0">blockchain.network.server.BaseController</node>
+    <node x="679.7420634920635" y="330.0">blockchain.network.server.HttpServer</node>
+    <node x="954.040909090909" y="192.0">blockchain.wallet.HttpClientWrapper</node>
+    <node x="169.0" y="493.0">blockchain.data.exceptions.AlreadyMinedException</node>
+    <node x="439.0" y="493.0">blockchain.network.Broadcaster</node>
+    <node x="54.00000000000006" y="420.0">blockchain.storage.Storage</node>
+    <node x="597.4920634920635" y="420.0">blockchain.network.NetworkInternal</node>
+    <node x="0.8333333333333712" y="330.0">blockchain.storage.IStorage</node>
+    <node x="464.4920634920635" y="420.0">blockchain.network.Network</node>
+    <node x="1171.6242424242423" y="302.0">blockchain.wallet.Cli</node>
+    <node x="542.7420634920635" y="330.0">blockchain.network.INetwork</node>
+    <node x="832.3333333333334" y="142.0">blockchain.network.core.WalletService</node>
+    <node x="499.33333333333337" y="142.0">blockchain.network.core.PeerService</node>
+    <node x="430.4335317460318" y="260.39285714285717">blockchain.utility.Log</node>
+    <node x="573.3670634920635" y="220.0">blockchain.network.server.PeerController</node>
+  </nodes>
+  <notes />
+  <edges>
+    <edge source="blockchain.data.core.TransactionOutput" target="blockchain.data.core.TransactionInputOutputBase" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="214.08333333333337" y="39.0" />
+      <point x="321.00000000000006" y="39.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.storage.Storage" target="blockchain.storage.IStorage" relationship="TO_ONE">
+      <point x="-5.6843418860808015E-14" y="-14.0" />
+      <point x="108.0" y="399.0" />
+      <point x="56.833" y="399.0" />
+      <point x="-3.3333333337282056E-4" y="14.0" />
+    </edge>
+    <edge source="blockchain.wallet.Cli" target="blockchain.wallet.Config" relationship="TO_ONE">
+      <point x="7.416666666666686" y="-14.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.mining.BlockService" target="blockchain.mining.MiningService" relationship="TO_ONE">
+      <point x="-26.59076479076481" y="-11.866233766233734" />
+      <point x="346.9012987012987" y="390.0668831168831" />
+      <point x="346.9012987012987" y="356.7707792207793" />
+      <point x="27.3701298701298" y="12.770779220779275" />
+    </edge>
+    <edge source="blockchain.mining.MiningService" target="blockchain.data.core.Block" relationship="TO_ONE">
+      <point x="-0.0" y="-14.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.mining.BlockService" target="blockchain.network.INetwork" relationship="TO_ONE">
+      <point x="63.499936507936525" y="-14.0" />
+      <point x="436.992" y="399.0" />
+      <point x="601.242" y="399.0" />
+      <point x="-6.349206353206682E-5" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.HttpServer" target="blockchain.network.server.WalletController" relationship="TO_ONE">
+      <point x="27.625" y="-14.0" />
+      <point x="-62.5" y="14.0" />
+    </edge>
+    <edge source="blockchain.mining.BlockService" target="blockchain.storage.IStorage" relationship="TO_ONE">
+      <point x="-51.56089466089469" y="-8.928571428571388" />
+      <point x="321.9311688311688" y="399.0" />
+      <point x="56.833" y="399.0" />
+      <point x="-3.3333333337282056E-4" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.HttpServer" target="blockchain.utility.Log" relationship="TO_ONE">
+      <point x="-6.349206353206682E-5" y="14.0" />
+      <point x="745.242" y="378.0" />
+      <point x="469.4335317460318" y="378.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.data.core.Block" target="blockchain.data.core.Transaction" relationship="TO_MANY">
+      <point x="-0.0" y="-14.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.data.core.Transaction" target="blockchain.data.core.TransactionOutput" relationship="TO_MANY">
+      <point x="-21.416666666666686" y="-14.0" />
+      <point x="85.5" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.HttpServer" target="blockchain.network.server.WalletController" relationship="CREATE">
+      <point x="12.625" y="-14.0" />
+      <point x="-77.5" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.HttpServer" target="blockchain.network.server.PeerController" relationship="CREATE">
+      <point x="-58.0" y="-14.0" />
+      <point x="35.375" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.NetworkInternal" target="blockchain.network.INetwork" relationship="REALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="681.4920634920635" y="399.0" />
+      <point x="630.4920634920635" y="399.0" />
+      <point x="29.25" y="14.0" />
+    </edge>
+    <edge source="blockchain.mining.BlockService" target="blockchain.utility.Log" relationship="TO_ONE">
+      <point x="-6.34920634752234E-5" y="-14.0" />
+      <point x="373.492" y="378.0" />
+      <point x="469.4335317460318" y="378.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.data.core.TransactionInput" target="blockchain.data.core.TransactionInputOutputBase" relationship="GENERALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="413.08333333333337" y="39.0" />
+      <point x="321.00000000000006" y="39.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.PeerController" target="blockchain.network.server.BaseController" relationship="GENERALIZATION">
+      <point x="39.25" y="-14.0" />
+      <point x="691.1170634920635" y="195.0" />
+      <point x="733.8333333333334" y="195.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.data.core.Transaction" target="blockchain.data.core.TransactionInput" relationship="TO_MANY">
+      <point x="13.583333333333314" y="-14.0" />
+      <point x="-78.5" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.WalletController" target="blockchain.network.core.WalletService" relationship="REALIZATION">
+      <point x="42.5" y="-14.0" />
+      <point x="877.8670634920635" y="195.0" />
+      <point x="906.8333333333335" y="195.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.wallet.Cli" target="blockchain.utility.Log" relationship="TO_ONE">
+      <point x="-3.3333333337282056E-4" y="14.0" />
+      <point x="1205.623909090909" y="378.0" />
+      <point x="469.4335317460318" y="378.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.mining.MiningService" target="blockchain.utility.Log" relationship="TO_ONE">
+      <point x="-5.6843418860808015E-14" y="14.0" />
+      <point x="321.0" y="378.0" />
+      <point x="469.4335317460318" y="378.0" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.Network" target="blockchain.network.INetwork" relationship="TO_ONE">
+      <point x="-6.349206353206682E-5" y="-14.0" />
+      <point x="520.992" y="399.0" />
+      <point x="601.242" y="399.0" />
+      <point x="-6.349206353206682E-5" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.HttpServer" target="blockchain.network.server.PeerController" relationship="TO_ONE">
+      <point x="-22.375" y="-14.0" />
+      <point x="71.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.WalletController" target="blockchain.network.server.BaseController" relationship="GENERALIZATION">
+      <point x="-42.5" y="-14.0" />
+      <point x="792.8670634920635" y="195.0" />
+      <point x="733.8333333333334" y="195.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.storage.StorageInternal" target="blockchain.storage.IStorage" relationship="REALIZATION">
+      <point x="0.0" y="-14.0" />
+      <point x="-47.5" y="399.0" />
+      <point x="28.83333333333337" y="399.0" />
+      <point x="-28.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.wallet.Cli" target="blockchain.wallet.HttpClientWrapper" relationship="TO_ONE">
+      <point x="-7.583333333333314" y="-14.0" />
+      <point x="1198.040909090909" y="282.5" />
+      <point x="1049.040909090909" y="282.5" />
+      <point x="-0.0" y="14.0" />
+    </edge>
+    <edge source="blockchain.network.server.PeerController" target="blockchain.network.core.PeerService" relationship="REALIZATION">
+      <point x="-39.25" y="-14.0" />
+      <point x="612.6170634920635" y="195.0" />
+      <point x="567.3333333333334" y="195.0" />
+      <point x="0.0" y="14.0" />
+    </edge>
+  </edges>
+  <settings layout="Hierarchic" zoom="0.8714412024756852" showDependencies="true" x="558.4666193181813" y="361.1334415584415" />
+  <SelectedNodes />
+  <Categories />
+  <SCOPE>All</SCOPE>
+  <VISIBILITY>private</VISIBILITY>
+</Diagram>
+
