@@ -428,18 +428,23 @@ public class BlockService {
 
             storage.removeBlock();
 
-//            // Add transactions back into the pool
-//            List<Transaction> transactions = block.getData();
-//            for (Transaction transaction : transactions) {
-//                if (transaction.isCoinbase()) {
-//                    storage.removeUtxoFromTransactionOutput(transaction);
-//                    continue;
-//                }
-//                revertTransactionFromBlock(transaction);
-//            }
+            List<Transaction> transactions = new ArrayList<>();
+            Collections.copy(transactions, block.getData());
+            Collections.reverse(transactions);
+
+            // Add input utxo back into the pool and remove output utxo
+            for (Transaction transaction : transactions) {
+                if (transaction.isCoinbase()) {
+                    storage.removeUtxoFromTransactionOutput(transaction);
+                    continue;
+                }
+                storage.addUtxoFromTransactionInput(transaction);
+                storage.removeUtxoFromTransactionOutput(transaction);
+            }
         }
 
         // Put transactions back to the pool
+        // Not used
         private void revertTransactionFromBlock(Transaction transaction) {
             storage.removeUtxoFromTransactionOutput(transaction);
             storage.addPendingUtxoFromTransactionInput(transaction);

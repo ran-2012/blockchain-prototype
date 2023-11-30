@@ -163,6 +163,16 @@ class StorageInternal(dbName: String) : IStorage {
         redisClient.normal.removeUtxo(address, transactionId, outputIdx)
     }
 
+    override fun addUtxoFromTransactionInput(transaction: Transaction) {
+        transaction.inputs.forEach { input ->
+            redisClient.normal.addUtxo(
+                input.originalTxHash,
+                input.originalOutputIndex,
+                TransactionOutput(input.address, input.value)
+            )
+        }
+    }
+
     override fun addUtxoFromTransactionOutput(transaction: Transaction) {
         transaction.outputs.forEachIndexed { i, output ->
             addUtxo(transaction.hash, i, output)

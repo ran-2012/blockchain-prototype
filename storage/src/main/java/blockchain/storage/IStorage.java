@@ -49,6 +49,8 @@ public interface IStorage {
 
     List<Transaction> getTransactionAll();
 
+    void addUtxoFromTransactionInput(Transaction transaction);
+
     void addUtxoFromTransactionOutput(Transaction transaction);
 
     void removeUtxoFromTransactionInput(Transaction transaction);
