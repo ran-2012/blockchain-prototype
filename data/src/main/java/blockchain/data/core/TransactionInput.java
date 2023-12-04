@@ -1,5 +1,7 @@
 package blockchain.data.core;
 
+import blockchain.utility.Rsa;
+
 public class TransactionInput extends TransactionInputOutputBase {
 
     public String originalTxHash = "";
@@ -17,5 +19,17 @@ public class TransactionInput extends TransactionInputOutputBase {
         this.originalTxHash = originalTxHash;
         this.originalOutputIndex = originalOutputIndex;
         this.signature = signature;
+    }
+
+    public void sign(String privateKey) {
+        publicKey = publicKey;
+        signature = "";
+        signature = Rsa.sign(this, privateKey);
+    }
+
+    public boolean verify(String publicKey) {
+        String signature = this.signature;
+        this.signature = "";
+        return Rsa.verify(this, signature, publicKey);
     }
 }

@@ -2,7 +2,6 @@ package blockchain.network.server
 
 import blockchain.data.core.Transaction
 import blockchain.data.core.TransactionInput
-import blockchain.data.core.TransactionOutput
 import blockchain.network.INetwork
 import blockchain.network.core.WalletService
 import blockchain.storage.Storage
@@ -13,7 +12,7 @@ class WalletController(coroutineContext: CoroutineScope, callback: INetwork.Call
     BaseController(coroutineContext, callback),
     WalletService {
 
-    override suspend fun getTransaction(sourceAddress: String, targetAddress: String, value: Long): Transaction? {
+    override suspend fun getTransaction(sourceAddress: String, targetAddress: String, value: String): Transaction? {
         val transaction = scope.async {
             try {
                 callback.onNewTransactionRequested(sourceAddress, targetAddress, value)

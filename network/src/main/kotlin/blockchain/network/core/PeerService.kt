@@ -2,6 +2,7 @@ package blockchain.network.core
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
+import blockchain.data.core.Transaction.Signature
 import retrofit2.http.*
 
 interface PeerService {
@@ -17,8 +18,24 @@ interface PeerService {
     @GET(BLOCKS)
     suspend fun getBlockRange(@Query(PARAM_MIN) min: Long, @Query(PARAM_MAX) max: Long): Map<Long, Block>
 
+    @GET("user-location")
+    suspend fun getUserLocation(@Query("address") address: String): String
+
     @GET(HEARTBEAT)
     suspend fun heartbeat()
+
+    @POST("global/$BLOCKS")
+    suspend fun globalNewBlock(@Body block: Block)
+
+    @POST("global/$TRANSACTION")
+    suspend fun globalNewTransaction(@Body transaction: Transaction)
+
+    @POST("global/move-user")
+    suspend fun globalMoveUser(
+        @Query("address") address: String,
+        @Query("local-chain-id") localChainId: String,
+        signatures: List<Signature>
+    )
 
     companion object {
         const val BLOCKS = "blocks"

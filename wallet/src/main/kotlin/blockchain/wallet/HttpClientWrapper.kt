@@ -2,7 +2,6 @@ package blockchain.wallet
 
 import blockchain.data.core.Transaction
 import blockchain.data.core.TransactionInput
-import blockchain.data.core.TransactionOutput
 import blockchain.network.client.HttpClient
 import kotlinx.coroutines.runBlocking
 

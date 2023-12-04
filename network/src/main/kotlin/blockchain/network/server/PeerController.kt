@@ -8,6 +8,7 @@ import blockchain.storage.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import retrofit2.http.Query
 import java.lang.Exception
 
 class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callback) :
@@ -62,7 +63,28 @@ class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callba
         return result.await()
     }
 
+
     override suspend fun heartbeat() {
+    }
+
+    override suspend fun globalNewBlock(block: Block) {
+        callback.onNewBlockReceived(block)
+    }
+
+    override suspend fun globalNewTransaction(transaction: Transaction) {
+        callback.onGlobalSignedTransactionReceived(transaction)
+    }
+
+    override suspend fun getUserLocation(address: String): String {
+        return callback.onGlobalGetUserLocation(address)
+    }
+
+    override suspend fun globalMoveUser(
+        address: String,
+        localChainId: String,
+        signatures: List<Transaction.Signature>
+    ) {
+        callback.onGlobalMoveUser(address, localChainId, signatures)
     }
 
 }

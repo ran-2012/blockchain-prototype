@@ -29,16 +29,9 @@ public class BlockService {
 
     Log log = Log.get(this);
 
-    public static float FEE_INDEX = 0.1f;
-
-    public static long REWARD_PER_BLOCK = 100_000;
-
     public static long CHECK_TRANSACTION_POOL_INTERVAL = 1_000; // ms
 
-    public static long TARGET_TIME_PER_BLOCK = 5_000; // ms
-    public static int DEFAULT_DIFFICULTY = 16;
-    public static int ADJUST_DIFFICULTY_BLOCK_INTERVAL = 10;
-    public static long TARGET_TIME = TARGET_TIME_PER_BLOCK * ADJUST_DIFFICULTY_BLOCK_INTERVAL;
+    public static int DEFAULT_DIFFICULTY = 8;
 
     private final IStorage storage = Storage.getInstance();
     private final INetwork network = Network.getInstance();
@@ -48,6 +41,8 @@ public class BlockService {
     private final Internal internal = new Internal();
 
     private final AtomicBoolean running = new AtomicBoolean(false);
+
+    private final boolean isGlobalNode = false;
 
     private final Boolean isMiner;
     private final String publicKey;
@@ -122,10 +117,6 @@ public class BlockService {
         }
     }
 
-    public long getFee(long value) {
-        return (long) (value * FEE_INDEX);
-    }
-
     private void addNewBlock(Block block) {
         executor.execute(() -> internal.addNewBlock(block));
     }
@@ -156,40 +147,8 @@ public class BlockService {
         return storage.getTransactionAll();
     }
 
-    private int getDifficulty(long timestamp) {
-        Block previousBlock = storage.getLastBlock();
-        long nextHeight = previousBlock == null ? 0 : storage.getHeight() + 1;
-        // First block in block 0 (pre-generated)
-        // Only adjust after 10 blocks
-        if (nextHeight < ADJUST_DIFFICULTY_BLOCK_INTERVAL) {
-            return DEFAULT_DIFFICULTY;
-        }
-        int currentDifficulty = previousBlock == null ? DEFAULT_DIFFICULTY : previousBlock.getDifficulty();
-        // Adjust difficulty every 10 blocks
-        if (nextHeight % ADJUST_DIFFICULTY_BLOCK_INTERVAL == 0) {
-            long preHeight = nextHeight - ADJUST_DIFFICULTY_BLOCK_INTERVAL;
-
-            Map<Long, Block> map = storage.getBlockRange(preHeight, nextHeight);
-            Block preBlock = map.get(preHeight);
-
-            assert preBlock != null;
-
-            long timeDelta = timestamp - preBlock.getTimestamp();
-
-            assert timeDelta > 0;
-
-            if (timeDelta / TARGET_TIME > 1) {
-                currentDifficulty -= (int) (Math.log((double) timeDelta / TARGET_TIME) / Math.log(2));
-                if (currentDifficulty < 0) {
-                    currentDifficulty = 0;
-                }
-                log.debug("Difficulty changed to: {}", currentDifficulty);
-            } else if (TARGET_TIME / timeDelta > 1) {
-                currentDifficulty += (int) (Math.log((double) TARGET_TIME / timeDelta) / Math.log(2));
-                log.debug("Difficulty changed to: {}", currentDifficulty);
-            }
-        }
-        return currentDifficulty;
+    private int getDifficulty() {
+        return DEFAULT_DIFFICULTY;
     }
 
     private Block generatePreMinedBlock(List<Transaction> transactions) {
@@ -211,15 +170,7 @@ public class BlockService {
 
         long timestamp = new Date().getTime();
         block.setTimestamp(timestamp);
-        block.setDifficulty(getDifficulty(timestamp));
-        long fee = 0;
-        for (Transaction transaction : transactions) {
-            block.addTransaction(transaction);
-            fee += transaction.fee;
-        }
-        TransactionOutput coinBaseOutput = new TransactionOutput(this.address, fee + REWARD_PER_BLOCK);
-        Transaction coinBaseTransaction = new Transaction(coinBaseOutput);
-        block.addTransaction(coinBaseTransaction);
+        block.setDifficulty(getDifficulty());
         block.updateMerkleRoot();
         block.setNonce(0);
         return block;
@@ -251,10 +202,6 @@ public class BlockService {
             }
             input.signature = signature;
         }
-        if (!Rsa.verify(transaction.outputHash, transaction.outputSignature, transaction.sourcePublicKey)) {
-            log.warn("Failed to verify output");
-            return false;
-        }
         return true;
     }
 
@@ -276,93 +223,6 @@ public class BlockService {
      */
     private class Internal {
 
-        private void updateChainTillHashMatches(Block block) {
-            Map<Long, Block> blockToAddList = new HashMap<>();
-            blockToAddList.put(block.getHeight(), block);
-
-            long targetHeight = block.getHeight() - 1;
-            String targetHash = block.getPrevHash();
-
-            // To accept the new block, search where two chains are diverged
-            while (targetHeight >= 0 && storage.getBlock(targetHash) == null) {
-                log.debug("Target hash: {}, target height: {}", targetHash, targetHeight);
-                Map<String, Block> result = network.getBlock(targetHash);
-                if (!result.isEmpty()) {
-                    Block blockAtTargetHeight = null;
-                    for (Block blk : result.values()) {
-                        if (blk.getHash().equals(targetHash) && blk.getHeight() == targetHeight) {
-                            try {
-                                blk.validate();
-                            } catch (Exception ignore) {
-                            }
-                            blockAtTargetHeight = blk;
-                            break;
-                        }
-                    }
-                    if (blockAtTargetHeight == null) {
-                        log.warn("Unable to fetch block, hash: {}, height: {} from other node", targetHash, targetHeight);
-                        return;
-                    } else {
-                        blockToAddList.put(targetHeight, blockAtTargetHeight);
-                        --targetHeight;
-                        targetHash = blockAtTargetHeight.getPrevHash();
-                    }
-                } else {
-                    log.warn("Unable to fetch block, hash: {} from other node", block.getPrevHash());
-                    log.warn("Reject block, hash: {}", block.getHash());
-                    return;
-                }
-            }
-
-            if (storage.getBlock(targetHash) != null) {
-                log.info("Hash matches at height: {}", targetHeight);
-            }
-
-            // Revert local chain to target height which makes possible to accept incoming block
-            while (storage.getHeight() > targetHeight) {
-                revertBlock();
-            }
-            if (targetHeight == -1) {
-                log.info("All block reverted, loading new chain");
-            }
-
-            assert block.getHeight() - targetHeight == blockToAddList.size();
-
-            log.info("Add block from height {} to {}", targetHeight + 1, block.getHeight());
-            // Some previous transaction may be requried to revert
-//            List<Transaction> preTransactionList = storage.getTransactionAll();
-            // Add blocks on the longer chain from peers
-            for (long height = targetHeight + 1; height <= block.getHeight(); ++height) {
-                Block blockToAdd = blockToAddList.get(height);
-                assert blockToAdd != null;
-
-                log.info("Add block height: {}, hash: {}", blockToAdd.getHeight(), blockToAdd.getHash());
-                storage.addBlock(blockToAdd);
-                for (Transaction transaction : blockToAdd.getData()) {
-                    storage.removeTransaction(transaction.hash);
-                    storage.addUtxoFromTransactionOutput(transaction);
-                    storage.removeUtxoFromTransactionInput(transaction);
-                    storage.removePendingUtxoFromTransactionInput(transaction);
-
-//                    // Completed transaction from other peers may contain utxo already used
-//                    Set<String> usedSet = new HashSet<>();
-//                    for (TransactionInput usedInput : transaction.inputs) {
-//                        usedSet.add(usedInput.originalTxHash + usedInput.originalOutputIndex);
-//                    }
-//                    for (Transaction tx : preTransactionList) {
-//                        for (TransactionInput input : tx.inputs) {
-//                            // If transaction in pool shared a utxo with completed tx, revert the tx in the pool
-//                            if (usedSet.contains(input.originalTxHash + input.originalTxHash)) {
-//                                storage.removeTransaction(tx.hash);
-//                                storage.removePendingUtxoFromTransactionInput(tx);
-//                                break;
-//                            }
-//                        }
-//                    }
-                }
-            }
-        }
-
         private void addNewBlock(Block block) {
             if (!running.get()) {
                 return;
@@ -382,7 +242,9 @@ public class BlockService {
                 log.warn(e);
                 return;
             }
-            updateChainTillHashMatches(block);
+
+            assert storage.getBlock(block.getPrevHash()) != null;
+            storage.addBlock(block);
         }
 
         private void addNewTransaction(Transaction transaction) {
@@ -405,7 +267,6 @@ public class BlockService {
                 }
             } catch (Exception e) {
                 log.warn(e);
-                e.printStackTrace();
                 log.warn("Unable to verify transaction {}", transaction.hash);
             }
 
@@ -416,51 +277,6 @@ public class BlockService {
             log.info("New transaction added to pool, hash: {}", transaction.hash);
         }
 
-        // Revert last block in database
-        private void revertBlock() {
-            Block block = storage.getLastBlock();
-            if (block == null) {
-                log.warn("All block reverted");
-                return;
-            }
-
-            log.info("Reverting block, height: {}", block.getHeight());
-
-            storage.removeBlock();
-
-            List<Transaction> transactions = new ArrayList<>();
-            Collections.copy(transactions, block.getData());
-            Collections.reverse(transactions);
-
-            // Add input utxo back into the pool and remove output utxo
-            for (Transaction transaction : transactions) {
-                if (transaction.isCoinbase()) {
-                    storage.removeUtxoFromTransactionOutput(transaction);
-                    continue;
-                }
-                storage.addUtxoFromTransactionInput(transaction);
-                storage.removeUtxoFromTransactionOutput(transaction);
-            }
-        }
-
-        // Put transactions back to the pool
-        // Not used
-        private void revertTransactionFromBlock(Transaction transaction) {
-            storage.removeUtxoFromTransactionOutput(transaction);
-            storage.addPendingUtxoFromTransactionInput(transaction);
-            storage.addTransaction(transaction);
-
-            // Remove all transaction which contains output from the reverted transaction
-            List<Transaction> transactions = storage.getTransactionAll();
-            for (Transaction transaction1 : transactions) {
-                for (TransactionInput input : transaction1.inputs) {
-                    if (input.originalTxHash.equals(transaction.hash)) {
-                        storage.removePendingUtxoFromTransactionInput(transaction);
-                        storage.removeTransaction(transaction.hash);
-                    }
-                }
-            }
-        }
     }
 
     private final MiningService.Callback callback = new MiningService.Callback() {
@@ -490,11 +306,11 @@ public class BlockService {
         }
 
         @Override
-        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
+        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, String value) {
             return generateNewTransaction(sourceAddress, targetAddress, value);
         }
 
-        Set<String> receivedTransaction = new HashSet<>();
+        final Set<String> receivedTransaction = new HashSet<>();
 
         @Override
         public void onSignedTransactionReceived(Transaction transaction) {
@@ -510,43 +326,47 @@ public class BlockService {
             // verification is in Internal.addNewTransaction
             addNewTransaction(transaction);
         }
+
+        @Override
+        public void onGlobalNewBlockReceived(Block data) {
+            super.onGlobalNewBlockReceived(data);
+        }
+
+        @Override
+        public void onGlobalSignedTransactionReceived(Transaction transaction) {
+            super.onGlobalSignedTransactionReceived(transaction);
+        }
+
+        @Override
+        public String onGlobalGetUserLocation(String address) {
+            return super.onGlobalGetUserLocation(address);
+        }
+
+        @Override
+        public void onGlobalMoveUser(String address, String localChainId, List<Transaction.Signature> signatures) {
+            super.onGlobalMoveUser(address, localChainId, signatures);
+        }
     };
 
     @TestOnly
-    public Transaction generateNewTransaction(String sourceAddress, String targetAddress, long value) {
+    public Transaction generateNewTransaction(String sourceAddress, String targetAddress, String value) {
         Set<TransactionInput> utxoList = storage.getUtxoByAddress(sourceAddress);
         List<TransactionInput> inputList = new ArrayList<>();
         List<TransactionOutput> outputList = new ArrayList<>();
 
-        long requiredValue = value + getFee(value);
-        long usedValue = 0L;
-        for (TransactionInput utxo : utxoList) {
-            usedValue += utxo.getValue();
-            inputList.add(utxo);
-            if (usedValue >= requiredValue) {
-                break;
-            }
-        }
-        if (usedValue < requiredValue) {
-            // Reject the transaction if the source address does not have enough funds
-            throw new RuntimeException("Not enough balance in " + sourceAddress);
+        if (utxoList.isEmpty()) {
+
         }
 
-        // To targetAddress
+        inputList.add(utxoList.iterator().next());
+
         TransactionOutput output1 = new TransactionOutput(targetAddress, value);
         outputList.add(output1);
 
-        if (usedValue > requiredValue) {
-            // Send back additional money back
-            TransactionOutput output2 = new TransactionOutput(sourceAddress, usedValue - requiredValue);
-            outputList.add(output2);
-        }
-        // Generate a new transaction
         Transaction transaction = new Transaction(sourceAddress, targetAddress, inputList, outputList);
 
-        log.info("Generate new transaction from: {}, to: {}, value: {}", sourceAddress, targetAddress, value);
+        log.info("Generate new transaction from: {}, data: {}", sourceAddress, value);
 
-        // Return the new transaction to the client
         return transaction;
     }
 }

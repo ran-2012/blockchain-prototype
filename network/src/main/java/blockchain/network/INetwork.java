@@ -3,7 +3,7 @@ package blockchain.network;
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public interface INetwork {
@@ -19,12 +19,21 @@ public interface INetwork {
 
     Map<String, Map<Long, Block>> getBlockRange(Long heightMin, Long heightMax);
 
+    void globalNewBlock(Block block);
+
+    void globalNewTransaction(Transaction transaction);
+
+    String globalGetUserLocation(String address);
+
+    void globalMoveUser(String address, String localChainId, List<Transaction.Signature> signatures);
+
+
     class Callback {
         public void onNewBlockReceived(Block data) {
 
         }
 
-        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, long value) {
+        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, String value) {
             return null;
         }
 
@@ -39,5 +48,23 @@ public interface INetwork {
         public void onPeerLost(String nodeId) {
 
         }
+
+        public void onGlobalNewBlockReceived(Block data) {
+
+        }
+
+        public void onGlobalSignedTransactionReceived(Transaction transaction) {
+
+        }
+
+        public String onGlobalGetUserLocation(String address) {
+            return "";
+        }
+
+        public void onGlobalMoveUser(String address,
+                                     String localChainId,
+                                     List<Transaction.Signature> signatures) {
+        }
+
     }
 }

@@ -4,14 +4,12 @@ import blockchain.data.core.Transaction;
 import blockchain.data.core.TransactionInput;
 import blockchain.data.core.TransactionOutput;
 import blockchain.utility.Hash;
-import blockchain.utility.Json;
 import blockchain.utility.Log;
 import blockchain.utility.Rsa;
 import picocli.CommandLine.Command;
 import picocli.CommandLine.Parameters;
 
 import java.util.List;
-import java.util.Map;
 
 @Command(name = "wallet")
 public class Cli {
@@ -143,8 +141,12 @@ public class Cli {
                 input.signature = Rsa.sign(input, privateKey);
             }
         }
-        transaction.sourcePublicKey = publicKey;
-        transaction.outputSignature = Rsa.sign(transaction.outputHash, privateKey);
+        Transaction.Signature signature = new Transaction.Signature();
+        signature.data = Hash.hashString(transaction.outputs);
+        signature.publicKey = publicKey;
+        signature.signature = Rsa.sign(signature.data, privateKey);
+        signature.type = Transaction.SignatureType.OUTPUT;
+        transaction.signature.add(signature);
     }
 
     @Command(name = "balance", description = {"Query balance"})

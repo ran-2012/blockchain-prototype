@@ -51,6 +51,34 @@ class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap:
         }
     }
 
+    override fun globalNewBlock(block: Block) {
+        return runBlocking {
+            broadcaster.globalNewBlock(block)
+        }
+    }
+
+    override fun globalNewTransaction(transaction: Transaction) {
+        runBlocking {
+            broadcaster.globalNewTransaction(transaction)
+        }
+    }
+
+    override fun globalGetUserLocation(address: String): String {
+        return runBlocking {
+            broadcaster.globalGetUserLocation(address)
+        }
+    }
+
+    override fun globalMoveUser(
+        address: String,
+        localChainId: String,
+        signatures: List<Transaction.Signature>
+    ) {
+        runBlocking {
+            broadcaster.globalMoveUser(address, localChainId, signatures)
+        }
+    }
+
     override fun getBlockRange(heightMin: Long, heightMax: Long): Map<String, Map<Long, Block>> {
         return runBlocking {
             broadcaster.getBlockRange(heightMin, heightMax)

@@ -17,3 +17,5 @@ include 'network'
 include 'storage'
 include 'utility'
 include 'wallet'
+include 'node'
+

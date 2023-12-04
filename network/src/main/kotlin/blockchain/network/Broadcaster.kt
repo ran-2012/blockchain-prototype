@@ -70,4 +70,33 @@ class Broadcaster @JvmOverloads constructor(initialPeerMap: Map<String, String> 
             }
         }
     }
+    suspend fun globalNewBlock(block: Block) {
+        for (key in getKeySet()) {
+            peerMap[key]?.peerService?.globalNewBlock(block)
+        }
+    }
+
+    suspend fun globalNewTransaction(transaction: Transaction) {
+        for (key in getKeySet()) {
+            peerMap[key]?.peerService?.globalNewTransaction(transaction)
+        }
+    }
+
+
+    suspend fun globalGetUserLocation(address: String): String {
+        for (key in getKeySet()) {
+            val url = peerMap[key]?.peerService?.getUserLocation(address)
+            if (!url.isNullOrEmpty()) {
+                return url
+            }
+        }
+        return ""
+    }
+
+    suspend fun globalMoveUser(address: String, localChainId: String, signatures: List<Transaction.Signature>): String {
+        for (key in getKeySet()) {
+            peerMap[key]?.peerService?.globalMoveUser(address, localChainId, signatures)
+        }
+        return ""
+    }
 }

@@ -5,7 +5,9 @@ import blockchain.utility.Json;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class Transaction {
@@ -15,10 +17,7 @@ public class Transaction {
     public List<TransactionInput> inputs = new ArrayList<>();
     public List<TransactionOutput> outputs = new ArrayList<>();
 
-    public String outputHash = "";
-    public String sourcePublicKey = "";
-    public String outputSignature = "";
-
+    public List<Signature> signature = new ArrayList<>();
     public long fee;
     public long timestamp;
 
@@ -26,6 +25,22 @@ public class Transaction {
 
     public String sourceAddress = "";
     public String targetAddress = "";
+
+    public static class SignatureType {
+        public static final String USER = "USER";
+        public static final String PEER = "PEER";
+        public static final String OUTPUT = "OUTPUT";
+        public static final String GLOBAL = "GLOBAL";
+        public static final String ORIGINAL_SHARDING = "ORIGINAL";
+        public static final String CURRENT_SHARDING = "CURRENT";
+    }
+
+    public static class Signature {
+        public String type = "";
+        public String data = "";
+        public String publicKey = "";
+        public String signature = "";
+    }
 
     public Transaction(TransactionOutput coinbaseOutput) {
         this.inputs = null;
@@ -45,7 +60,6 @@ public class Transaction {
         this.outputs = txOutputs;
         this.timestamp = System.currentTimeMillis();
         this.coinbase = false;
-        this.outputHash = Hash.hashString(this.outputs);
         this.fee = calculateFee();
         this.hash = updateHash();
     }

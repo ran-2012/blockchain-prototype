@@ -2,7 +2,6 @@ package blockchain.network.core
 
 import blockchain.data.core.Transaction
 import blockchain.data.core.TransactionInput
-import blockchain.data.core.TransactionOutput
 import retrofit2.http.Body
 import retrofit2.http.GET
 import retrofit2.http.POST
@@ -14,7 +13,7 @@ interface WalletService {
     suspend fun getTransaction(
         @Query(PARAM_SOURCE_ADDRESS) sourceAddress: String,
         @Query(PARAM_TARGET_ADDRESS) targetAddress: String,
-        @Query(PARAM_VALUE) value: Long
+        @Query(PARAM_VALUE) value: String
     ): Transaction?
 
     @POST(TRANSACTION)

@@ -2,6 +2,7 @@ package blockchain.network.server
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
+import blockchain.data.core.Transaction.Signature
 import blockchain.network.INetwork.Callback
 import blockchain.network.core.PeerService
 import blockchain.network.core.WalletService
@@ -94,20 +95,41 @@ class HttpServer @JvmOverloads constructor(
                     peerController.newTransaction(ctx.bodyAsClass(Transaction::class.java))
                 }
             }
+            .get("user-location") { ctx ->
+
+            }
+            .get("global/${PeerService.TRANSACTION}") { ctx ->
+                runBlocking {
+                    peerController.newTransaction(ctx.bodyAsClass(Transaction::class.java))
+                }
+            }
+            .post("global/${PeerService.BLOCKS}") { ctx ->
+                runBlocking {
+                    peerController.globalNewBlock(ctx.bodyAsClass(Block::class.java))
+                }
+            }
+            .post("global/move-user") { ctx ->
+                val address = ctx.queryParam("address")!!
+                val localChainId = ctx.queryParam("local-chain-id")!!
+                val signatures: List<Signature> = ctx.bodyAsClass(List::class.java) as List<Signature>
+                runBlocking {
+                    peerController.globalMoveUser(address, localChainId, signatures)
+                }
+            }
             //===========================================//
             // Wallet interfaces
             .get(WalletService.TRANSACTION) { ctx ->
                 val sourceAddress = ctx.queryParam(WalletService.PARAM_SOURCE_ADDRESS)!!
                 val targetAddress = ctx.queryParam(WalletService.PARAM_TARGET_ADDRESS)!!
-                val value = ctx.queryParam(WalletService.PARAM_VALUE)!!.toLong()
+                val data = ctx.queryParam(WalletService.PARAM_VALUE)!!
                 runBlocking {
-                    val transaction = walletController.getTransaction(sourceAddress, targetAddress, value)
+                    val transaction = walletController.getTransaction(sourceAddress, targetAddress, data)
                     if (transaction == null) {
                         log.warn(
                             "Failed to generate transaction for address {}, to {}, value {}",
                             sourceAddress,
                             targetAddress,
-                            value
+                            data
                         )
                         ctx.status(400)
                     } else {
@@ -129,7 +151,6 @@ class HttpServer @JvmOverloads constructor(
             }
             //===========================================//
             .start(port)
-
     }
 
     fun stop() {

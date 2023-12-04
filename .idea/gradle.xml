@@ -4,9 +4,6 @@
   <component name="GradleSettings">
     <option name="linkedExternalProjectsSettings">
       <GradleProjectSettings>
-        <option name="delegatedBuild" value="true" />
-        <option name="testRunner" value="GRADLE" />
-        <option name="distributionType" value="DEFAULT_WRAPPED" />
         <option name="externalProjectPath" value="$PROJECT_DIR$" />
         <option name="modules">
           <set>
@@ -14,6 +11,7 @@
             <option value="$PROJECT_DIR$/data" />
             <option value="$PROJECT_DIR$/mining" />
             <option value="$PROJECT_DIR$/network" />
+            <option value="$PROJECT_DIR$/node" />
             <option value="$PROJECT_DIR$/storage" />
             <option value="$PROJECT_DIR$/utility" />
             <option value="$PROJECT_DIR$/wallet" />
