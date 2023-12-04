@@ -21,6 +21,13 @@ interface PeerService {
     @GET("user-location")
     suspend fun getUserLocation(@Query("address") address: String): String
 
+    @POST("move-user")
+    suspend fun moveUser(
+        @Query("address") address: String,
+        @Query("local-chain-id") localChainId: String,
+        signatures: List<Signature>
+    ): List<Signature>
+
     @GET(HEARTBEAT)
     suspend fun heartbeat()
 
@@ -30,12 +37,15 @@ interface PeerService {
     @POST("global/$TRANSACTION")
     suspend fun globalNewTransaction(@Body transaction: Transaction)
 
+    @GET("global/user-location")
+    suspend fun globalGetUserLocation(@Query("address") address: String): String
+
     @POST("global/move-user")
     suspend fun globalMoveUser(
         @Query("address") address: String,
         @Query("local-chain-id") localChainId: String,
         signatures: List<Signature>
-    )
+    ): List<Signature>
 
     companion object {
         const val BLOCKS = "blocks"

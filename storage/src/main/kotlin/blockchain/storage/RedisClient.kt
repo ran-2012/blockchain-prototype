@@ -73,6 +73,10 @@ class RedisClient(val dataBaseName: String, private val port: Int = DEFAULT_PORT
             jedis.srem(addPrefix(key), value)
         }
 
+        fun hasAddress(address: String): Boolean {
+            return jedis.sismember(addPrefix(PREFIX_ADDRESS, "ALL"), address)
+        }
+
         fun addUtxo(transactionId: String, outputIdx: Int, utxo: TransactionInputOutputBase) {
             val address = utxo.address
             val utxoStr = gson.toJson(utxo)

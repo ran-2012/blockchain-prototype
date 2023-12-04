@@ -38,7 +38,7 @@ class StorageInternalTest {
     }
 
     private fun createTransactionOutput(address: String, value: Long): TransactionOutput {
-        return TransactionOutput(address, value)
+        return TransactionOutput(address, value.toString())
     }
 
     private fun createTransactionInput(
@@ -47,7 +47,7 @@ class StorageInternalTest {
         originTxHash: String,
         originTxOutputIdx: Int
     ): TransactionInput {
-        return TransactionInput(address, value, originTxHash, originTxOutputIdx, "", "")
+        return TransactionInput(address, value, originTxHash, originTxOutputIdx)
     }
 
     private fun createTransaction(): Transaction {

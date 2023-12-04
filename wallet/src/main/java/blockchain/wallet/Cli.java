@@ -134,19 +134,12 @@ public class Cli {
     }
 
     private void signTransaction(String address, String publicKey, String privateKey, Transaction transaction) {
-        for (TransactionInput input : transaction.inputs) {
-            if (input.address.equals(address)) {
-                input.publicKey = publicKey;
-                input.signature = "";
-                input.signature = Rsa.sign(input, privateKey);
-            }
-        }
         Transaction.Signature signature = new Transaction.Signature();
         signature.data = Hash.hashString(transaction.outputs);
         signature.publicKey = publicKey;
         signature.signature = Rsa.sign(signature.data, privateKey);
         signature.type = Transaction.SignatureType.OUTPUT;
-        transaction.signature.add(signature);
+        transaction.signatures.add(signature);
     }
 
     @Command(name = "balance", description = {"Query balance"})

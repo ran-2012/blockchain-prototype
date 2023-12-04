@@ -12,13 +12,14 @@ import org.bson.codecs.configuration.CodecRegistries
 import org.bson.codecs.configuration.CodecRegistry
 import org.bson.codecs.pojo.PojoCodecProvider
 
-
-class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
+class DataBaseClient(dataBaseName: String, private val global: Boolean = false, dbUri: String = DEFAULT_DB_URI) {
 
     companion object {
         const val DEFAULT_DB_URI = "mongodb://localhost:27017"
         const val DB_BLOCK = "block"
+        const val DB_GLOBAL_BLOCK = "global_block"
         const val DB_TRANSACTION = "transaction"
+        const val DB_GLOBAL_TRANSACTION = "global_transaction"
         const val DB_UTXO = "unspent_transaction"
 
         const val FIELD_HEIGHT = "height"
@@ -53,10 +54,20 @@ class DataBaseClient(dataBaseName: String, dbUri: String = DEFAULT_DB_URI) {
 
     suspend fun initCollection() {
         database.createCollection(DB_BLOCK)
-        database.createCollection(DB_TRANSACTION)
+        database.createCollection(DB_GLOBAL_BLOCK)
+        database.createCollection(DB_GLOBAL_TRANSACTION)
+        database.createCollection(DB_GLOBAL_TRANSACTION)
 
-        blockCollection = database.getCollection(DB_BLOCK)
-        transactionCollection = database.getCollection(DB_TRANSACTION)
+        blockCollection = if (!global) {
+            database.getCollection(DB_BLOCK)
+        } else {
+            database.getCollection(DB_GLOBAL_BLOCK)
+        }
+        transactionCollection = if (!global) {
+            database.getCollection(DB_TRANSACTION)
+        } else {
+            database.getCollection(DB_GLOBAL_TRANSACTION)
+        }
     }
 
     suspend fun initSchema() {

@@ -48,6 +48,10 @@ class HttpServer @JvmOverloads constructor(
         walletController.callback = callback
     }
 
+    fun setGlobalChainCallback(callback: Callback) {
+        peerController.globalChainCallback = callback
+    }
+
     /**
      * Suspend till server is started.
      */
@@ -96,7 +100,23 @@ class HttpServer @JvmOverloads constructor(
                 }
             }
             .get("user-location") { ctx ->
-
+                val address = ctx.queryParam("address")!!
+                runBlocking {
+                    val result = peerController.getUserLocation(address)
+                    if (result.isEmpty()) {
+                        ctx.status(400)
+                    } else {
+                        ctx.result(result)
+                    }
+                }
+            }
+            .post("move-user") { ctx ->
+                val address = ctx.queryParam("address")!!
+                val localChainId = ctx.queryParam("local-chain-id")!!
+                val signatures: List<Signature> = ctx.bodyAsClass(List::class.java) as List<Signature>
+                runBlocking {
+                    peerController.moveUser(address, localChainId, signatures)
+                }
             }
             .get("global/${PeerService.TRANSACTION}") { ctx ->
                 runBlocking {
@@ -106,6 +126,17 @@ class HttpServer @JvmOverloads constructor(
             .post("global/${PeerService.BLOCKS}") { ctx ->
                 runBlocking {
                     peerController.globalNewBlock(ctx.bodyAsClass(Block::class.java))
+                }
+            }
+            .get("global/user-location") { ctx ->
+                val address = ctx.queryParam("address")!!
+                runBlocking {
+                    val result = peerController.globalGetUserLocation(address)
+                    if (result.isEmpty()) {
+                        ctx.status(400)
+                    } else {
+                        ctx.result(result)
+                    }
                 }
             }
             .post("global/move-user") { ctx ->

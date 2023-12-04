@@ -3,11 +3,14 @@ package blockchain.network;
 import blockchain.data.core.Block;
 import blockchain.data.core.Transaction;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
 public interface INetwork {
     void registerCallback(Callback callback);
+
+    void registerGlobalChainCallback(Callback callback);
 
     void unregisterCallback(Callback callback);
 
@@ -18,6 +21,10 @@ public interface INetwork {
     Map<String, Block> getBlock(String hash);
 
     Map<String, Map<Long, Block>> getBlockRange(Long heightMin, Long heightMax);
+
+    String getUserLocation(String address);
+
+    List<Transaction.Signature> moveUser(String address, String localChainId, List<Transaction.Signature> signatures);
 
     void globalNewBlock(Block block);
 
@@ -49,6 +56,16 @@ public interface INetwork {
 
         }
 
+        public String onGetUserDataLocation(String address) {
+            return "";
+        }
+
+        public List<Transaction.Signature> onMoveUser(String address,
+                                                      String localChainId,
+                                                      List<Transaction.Signature> signatures) {
+            return new ArrayList<>();
+        }
+
         public void onGlobalNewBlockReceived(Block data) {
 
         }
@@ -57,13 +74,14 @@ public interface INetwork {
 
         }
 
-        public String onGlobalGetUserLocation(String address) {
+        public String onGlobalGetUserDataLocation(String address) {
             return "";
         }
 
-        public void onGlobalMoveUser(String address,
-                                     String localChainId,
-                                     List<Transaction.Signature> signatures) {
+        public List<Transaction.Signature> onGlobalMoveUser(String address,
+                                                            String localChainId,
+                                                            List<Transaction.Signature> signatures) {
+            return new ArrayList<>();
         }
 
     }

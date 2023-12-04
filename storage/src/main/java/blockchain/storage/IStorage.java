@@ -49,15 +49,13 @@ public interface IStorage {
 
     List<Transaction> getTransactionAll();
 
-    void addUtxoFromTransactionInput(Transaction transaction);
-
     void addUtxoFromTransactionOutput(Transaction transaction);
 
     void removeUtxoFromTransactionInput(Transaction transaction);
 
-    void removeUtxoFromTransactionOutput(Transaction transaction);
-
     boolean hasUtxo(TransactionInput utxo);
+
+    boolean hasAddress(String address);
 
     Set<TransactionInput> getUtxoByAddress(String address);
 

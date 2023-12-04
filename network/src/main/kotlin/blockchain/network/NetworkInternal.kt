@@ -9,11 +9,11 @@ import kotlinx.coroutines.runBlocking
 class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap: Map<String, String> = HashMap()) :
     INetwork {
 
-
     private val server: HttpServer = HttpServer(serverPort)
     private val broadcaster: Broadcaster = Broadcaster(initialPeerMap)
 
     private var callback = Callback()
+    private var globalChainCallback = Callback()
 
     init {
         runBlocking {
@@ -25,6 +25,12 @@ class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap:
         this.callback = callback
 
         server.setCallback(callback)
+    }
+
+    override fun registerGlobalChainCallback(callback: Callback) {
+        this.globalChainCallback = callback
+
+        server.setGlobalChainCallback(callback)
     }
 
     override fun unregisterCallback(callback: Callback) {
@@ -48,6 +54,22 @@ class NetworkInternal @JvmOverloads constructor(serverPort: Int, initialPeerMap:
     override fun getBlock(hash: String): Map<String, Block> {
         return runBlocking {
             broadcaster.getBlock(hash)
+        }
+    }
+
+    override fun getUserLocation(address: String): String {
+        return runBlocking {
+            broadcaster.getUserLocation(address)
+        }
+    }
+
+    override fun moveUser(
+        address: String,
+        localChainId: String,
+        signatures: MutableList<Transaction.Signature>
+    ): List<Transaction.Signature>? {
+        return runBlocking {
+            broadcaster.moveUser(address, localChainId, signatures)
         }
     }
 

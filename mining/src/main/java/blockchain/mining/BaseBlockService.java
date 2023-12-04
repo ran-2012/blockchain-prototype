@@ -1,8 +1,3 @@
-/**
- * 区块链核心服务
- *
- * @author YUAN Longhang
- */
 package blockchain.mining;
 
 import blockchain.data.core.Block;
@@ -15,7 +10,6 @@ import blockchain.storage.IStorage;
 import blockchain.storage.Storage;
 import blockchain.utility.Hash;
 import blockchain.utility.Log;
-import blockchain.utility.Rsa;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.*;
@@ -24,30 +18,21 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-@SuppressWarnings("FieldCanBeLocal")
-public class BlockService {
-
-    Log log = Log.get(this);
-
+public abstract class BaseBlockService {
     public static long CHECK_TRANSACTION_POOL_INTERVAL = 1_000; // ms
-
     public static int DEFAULT_DIFFICULTY = 8;
-
+    protected final MiningService miningService = new MiningService();
+    protected final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
+    private final Internal internal = new Internal();
+    protected final Boolean isMiner;
+    protected final String privateKey;
+    protected final String publicKey;
+    protected final String address;
     private final IStorage storage = Storage.getInstance();
     private final INetwork network = Network.getInstance();
 
-    private final MiningService miningService = MiningService.getInstance();
-    private final ScheduledExecutorService executor = Executors.newSingleThreadScheduledExecutor();
-    private final Internal internal = new Internal();
-
+    protected Callback callback;
     private final AtomicBoolean running = new AtomicBoolean(false);
-
-    private final boolean isGlobalNode = false;
-
-    private final Boolean isMiner;
-    private final String publicKey;
-    private final String address;
-
     private final Runnable checkTransactionPoolRunnable = () -> {
         if (!running.get()) {
             return;
@@ -64,18 +49,32 @@ public class BlockService {
         }
         scheduleCheckTransactionPool();
     };
+    private final MiningService.Callback miningCallback = new MiningService.Callback() {
+        @Override
+        public void onNewBlockMined(Block block) {
+            log.info("New block mined, height: {}, hash: {}", block.getHeight(), block.getHash());
+            log.info("Nonce: {}", block.getNonce());
+            log.info("Time used: {} ms", System.currentTimeMillis() - block.getTimestamp());
+            addNewBlock(block);
+            log.debug("Broadcasting new block");
+            getNetwork().newBlock(block);
+        }
 
-    public BlockService() {
-        this(false, "");
-    }
+        @Override
+        public void onAllNonceTried(Block block) {
+            log.error("How is this possible?");
+            System.exit(-1);
+            // Empty
+            // Unlikely to use up all nonce
+        }
+    };
+    protected Log log = Log.get(this);
 
-    public BlockService(boolean isMiner, String publicKey) {
+    public BaseBlockService(boolean isMiner, String publicKey, String privateKey) {
         this.isMiner = isMiner;
+        this.privateKey = privateKey;
         this.publicKey = publicKey;
         this.address = Hash.hashString(publicKey);
-
-        Network.getInstance().registerCallback(networkCallback);
-
     }
 
     public void start() {
@@ -84,9 +83,9 @@ public class BlockService {
         running.set(true);
 
         // Remove transaction and utxo
-        storage.cleanCache();
+        getStorage().cleanCache();
 
-        Map<Long, Block> blockAll = storage.getBlockAll();
+        Map<Long, Block> blockAll = getStorage().getBlockAll();
         log.info("Loading block, count: {}", blockAll.size());
         for (long i = 0; i < blockAll.size(); ++i) {
             Block block = blockAll.get(i);
@@ -99,7 +98,7 @@ public class BlockService {
         if (isMiner) {
             log.info("Start checking transaction pool");
             assert !publicKey.isEmpty();
-            miningService.setCallback(callback);
+            miningService.setCallback(miningCallback);
             scheduleCheckTransactionPool();
         }
     }
@@ -117,11 +116,24 @@ public class BlockService {
         }
     }
 
-    private void addNewBlock(Block block) {
+    protected void addNewBlock(Block block) {
         executor.execute(() -> internal.addNewBlock(block));
     }
 
-    private void addNewTransaction(Transaction transaction) {
+    final Set<String> receivedTransaction = new HashSet<>();
+
+    protected void addNewTransaction(Transaction transaction) {
+        if (!receivedTransaction.contains(transaction.hash)) {
+            log.debug("Broadcasting new transaction");
+            getNetwork().newTransaction(transaction);
+            receivedTransaction.add(transaction.hash);
+        } else {
+            return;
+        }
+        log.info("New transaction received, hash: {}", transaction.hash);
+
+        // verification is in Internal.addNewTransaction
+
         executor.execute(() -> internal.addNewTransaction(transaction));
     }
 
@@ -132,19 +144,19 @@ public class BlockService {
     private boolean checkTransactionPool() {
         long currentTime = new Date().getTime();
 
-        Block lastBlock = storage.getLastBlock();
+        Block lastBlock = getStorage().getLastBlock();
         if (lastBlock == null) {
             return true;
         }
 
         long previousBlockTime = lastBlock.getTimestamp();
         long timeDifference = currentTime - previousBlockTime;
-        return timeDifference > 2_000 && !storage.getTransactionAll().isEmpty();
+        return timeDifference > 2_000 && !getStorage().getTransactionAll().isEmpty();
     }
 
     private List<Transaction> pollTransaction() {
         // Maybe just return all transactions
-        return storage.getTransactionAll();
+        return getStorage().getTransactionAll();
     }
 
     private int getDifficulty() {
@@ -154,7 +166,7 @@ public class BlockService {
     private Block generatePreMinedBlock(List<Transaction> transactions) {
         log.debug("Pre-generate block with {} transactions", transactions.size());
 
-        Block previousBlock = storage.getLastBlock();
+        Block previousBlock = getStorage().getLastBlock();
 
         // Generate block here then mine
         Block block = new Block();
@@ -183,7 +195,7 @@ public class BlockService {
 
     private boolean checkUtxo(Transaction transaction) {
         for (TransactionInput input : transaction.inputs) {
-            if (!storage.hasUtxo(input)) {
+            if (!getStorage().hasUtxo(input)) {
                 log.warn("Utxo {} is already in use", input);
                 return false;
             }
@@ -192,16 +204,10 @@ public class BlockService {
     }
 
     private boolean checkSignature(Transaction transaction) {
-        for (TransactionInput input : transaction.inputs) {
-            String signature = input.signature;
-            input.signature = "";
-            if (!Rsa.verify(input, signature, input.publicKey)) {
-                input.signature = signature;
-                log.warn("Fail to verify input {}", input);
-                return false;
-            }
-            input.signature = signature;
+        if (!transaction.verifyUser()) {
+            return false;
         }
+
         return true;
     }
 
@@ -212,9 +218,48 @@ public class BlockService {
     }
 
     private void initCacheForCompletedTransaction(Transaction transaction) {
-        storage.removeTransaction(transaction.hash);
-        storage.addUtxoFromTransactionOutput(transaction);
-        storage.removeUtxoFromTransactionInput(transaction);
+        getStorage().removeTransaction(transaction.hash);
+        getStorage().addUtxoFromTransactionOutput(transaction);
+        getStorage().removeUtxoFromTransactionInput(transaction);
+    }
+
+    protected IStorage getStorage() {
+        return storage;
+    }
+
+    protected INetwork getNetwork() {
+        return network;
+    }
+
+    abstract protected INetwork.Callback getNetworkCallback();
+
+    @TestOnly
+    public Transaction generateNewTransaction(String sourceAddress, String targetAddress, String value) {
+        Set<TransactionInput> utxoList = getStorage().getUtxoByAddress(sourceAddress);
+        List<TransactionInput> inputList = new ArrayList<>();
+        List<TransactionOutput> outputList = new ArrayList<>();
+
+        if (utxoList.isEmpty()) {
+            TransactionInput input = new TransactionInput();
+            input.address = "0".repeat(64);
+            inputList.add(input);
+        } else {
+            inputList.add(utxoList.iterator().next());
+        }
+
+        TransactionOutput output1 = new TransactionOutput(targetAddress, value);
+        output1.localChainId = Config.global.localChainId;
+        outputList.add(output1);
+
+        Transaction transaction = new Transaction(sourceAddress, targetAddress, inputList, outputList);
+
+        log.info("Generate new transaction from: {}, data: {}", sourceAddress, value);
+
+        return transaction;
+    }
+
+    public void setCallback(Callback callback) {
+        this.callback = callback;
     }
 
     /**
@@ -228,9 +273,9 @@ public class BlockService {
                 return;
             }
 
-            if (block.getHeight() <= storage.getHeight()) {
+            if (block.getHeight() <= getStorage().getHeight()) {
                 log.info("Block height {} is smaller than current height {}, skip.",
-                        block.getHeight(), storage.getHeight());
+                        block.getHeight(), getStorage().getHeight());
                 return;
             }
 
@@ -243,8 +288,8 @@ public class BlockService {
                 return;
             }
 
-            assert storage.getBlock(block.getPrevHash()) != null;
-            storage.addBlock(block);
+            assert getStorage().getBlock(block.getPrevHash()) != null;
+            getStorage().addBlock(block);
         }
 
         private void addNewTransaction(Transaction transaction) {
@@ -270,103 +315,21 @@ public class BlockService {
                 log.warn("Unable to verify transaction {}", transaction.hash);
             }
 
-            storage.addTransaction(transaction);
-            storage.removeUtxoFromTransactionInput(transaction);
-            storage.addPendingUtxoFromTransactionInput(transaction);
+            getStorage().addTransaction(transaction);
+            getStorage().removeUtxoFromTransactionInput(transaction);
+            getStorage().addPendingUtxoFromTransactionInput(transaction);
 
             log.info("New transaction added to pool, hash: {}", transaction.hash);
         }
-
     }
 
-    private final MiningService.Callback callback = new MiningService.Callback() {
-        @Override
-        public void onNewBlockMined(Block block) {
-            log.info("New block mined, height: {}, hash: {}", block.getHeight(), block.getHash());
-            log.info("Nonce: {}", block.getNonce());
-            log.info("Time used: {} ms", System.currentTimeMillis() - block.getTimestamp());
-            addNewBlock(block);
-            log.debug("Broadcasting new block");
-            network.newBlock(block);
+    public static class Callback {
+        public String onGetUserDataLocation(String address) {
+            return "";
         }
 
-        @Override
-        public void onAllNonceTried(Block block) {
-            log.error("How is this possible?");
-            System.exit(-1);
-            // Empty
-            // Unlikely to use up all nonce
+        public List<Transaction.Signature> onMoveUser(String address, String localChainId, List<Transaction.Signature> signatures) {
+            return new ArrayList<>();
         }
-    };
-
-    private final INetwork.Callback networkCallback = new INetwork.Callback() {
-        @Override
-        public void onNewBlockReceived(Block data) {
-            addNewBlock(data);
-        }
-
-        @Override
-        public Transaction onNewTransactionRequested(String sourceAddress, String targetAddress, String value) {
-            return generateNewTransaction(sourceAddress, targetAddress, value);
-        }
-
-        final Set<String> receivedTransaction = new HashSet<>();
-
-        @Override
-        public void onSignedTransactionReceived(Transaction transaction) {
-            if (!receivedTransaction.contains(transaction.hash)) {
-                log.debug("Broadcasting new transaction");
-                network.newTransaction(transaction);
-                receivedTransaction.add(transaction.hash);
-            } else {
-                return;
-            }
-            log.info("New transaction received, hash: {}", transaction.hash);
-
-            // verification is in Internal.addNewTransaction
-            addNewTransaction(transaction);
-        }
-
-        @Override
-        public void onGlobalNewBlockReceived(Block data) {
-            super.onGlobalNewBlockReceived(data);
-        }
-
-        @Override
-        public void onGlobalSignedTransactionReceived(Transaction transaction) {
-            super.onGlobalSignedTransactionReceived(transaction);
-        }
-
-        @Override
-        public String onGlobalGetUserLocation(String address) {
-            return super.onGlobalGetUserLocation(address);
-        }
-
-        @Override
-        public void onGlobalMoveUser(String address, String localChainId, List<Transaction.Signature> signatures) {
-            super.onGlobalMoveUser(address, localChainId, signatures);
-        }
-    };
-
-    @TestOnly
-    public Transaction generateNewTransaction(String sourceAddress, String targetAddress, String value) {
-        Set<TransactionInput> utxoList = storage.getUtxoByAddress(sourceAddress);
-        List<TransactionInput> inputList = new ArrayList<>();
-        List<TransactionOutput> outputList = new ArrayList<>();
-
-        if (utxoList.isEmpty()) {
-
-        }
-
-        inputList.add(utxoList.iterator().next());
-
-        TransactionOutput output1 = new TransactionOutput(targetAddress, value);
-        outputList.add(output1);
-
-        Transaction transaction = new Transaction(sourceAddress, targetAddress, inputList, outputList);
-
-        log.info("Generate new transaction from: {}, data: {}", sourceAddress, value);
-
-        return transaction;
     }
 }

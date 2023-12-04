@@ -8,11 +8,11 @@ import blockchain.storage.Storage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
-import retrofit2.http.Query
 import java.lang.Exception
 
 class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callback) :
     BaseController(coroutineContext, callback), PeerService {
+    var globalChainCallback = INetwork.Callback()
     override suspend fun newBlock(block: Block) {
         scope.launch {
             try {
@@ -63,28 +63,39 @@ class PeerController(coroutineContext: CoroutineScope, callback: INetwork.Callba
         return result.await()
     }
 
+    override suspend fun getUserLocation(address: String): String {
+        return callback.onGetUserDataLocation(address)
+    }
+
+    override suspend fun moveUser(
+        address: String,
+        localChainId: String,
+        signatures: List<Transaction.Signature>
+    ): List<Transaction.Signature> {
+        return globalChainCallback.onMoveUser(address, localChainId, signatures)
+    }
 
     override suspend fun heartbeat() {
     }
 
     override suspend fun globalNewBlock(block: Block) {
-        callback.onNewBlockReceived(block)
+        globalChainCallback.onGlobalNewBlockReceived(block)
     }
 
     override suspend fun globalNewTransaction(transaction: Transaction) {
-        callback.onGlobalSignedTransactionReceived(transaction)
+        globalChainCallback.onGlobalSignedTransactionReceived(transaction)
     }
 
-    override suspend fun getUserLocation(address: String): String {
-        return callback.onGlobalGetUserLocation(address)
+    override suspend fun globalGetUserLocation(address: String): String {
+        return callback.onGlobalGetUserDataLocation(address)
     }
 
     override suspend fun globalMoveUser(
         address: String,
         localChainId: String,
         signatures: List<Transaction.Signature>
-    ) {
-        callback.onGlobalMoveUser(address, localChainId, signatures)
+    ): List<Transaction.Signature> {
+        return globalChainCallback.onGlobalMoveUser(address, localChainId, signatures)
     }
 
 }

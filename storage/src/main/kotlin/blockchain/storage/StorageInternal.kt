@@ -17,7 +17,7 @@ import org.jetbrains.annotations.Nullable
 import org.jetbrains.annotations.TestOnly
 import java.lang.Exception
 
-class StorageInternal(dbName: String) : IStorage {
+class StorageInternal(dbName: String, global: Boolean = false) : IStorage {
 
     private val log = Log.get(this)
 
@@ -28,13 +28,17 @@ class StorageInternal(dbName: String) : IStorage {
     private var _lastBlock: Block? = null
 
     init {
-        client = DataBaseClient(dbName)
+        client = DataBaseClient(dbName, global)
         runBlocking {
             client.initCollection()
             client.initSchema()
         }
 
-        redisClient = RedisClient(dbName)
+        redisClient = if (global) {
+            RedisClient("$dbName:global")
+        } else {
+            RedisClient(dbName)
+        }
     }
 
     private fun updateBlockMap(map: HashMap<Long, Block>, block: Block) {
@@ -163,16 +167,6 @@ class StorageInternal(dbName: String) : IStorage {
         redisClient.normal.removeUtxo(address, transactionId, outputIdx)
     }
 
-    override fun addUtxoFromTransactionInput(transaction: Transaction) {
-        transaction.inputs.forEach { input ->
-            redisClient.normal.addUtxo(
-                input.originalTxHash,
-                input.originalOutputIndex,
-                TransactionOutput(input.address, input.value)
-            )
-        }
-    }
-
     override fun addUtxoFromTransactionOutput(transaction: Transaction) {
         transaction.outputs.forEachIndexed { i, output ->
             addUtxo(transaction.hash, i, output)
@@ -186,14 +180,12 @@ class StorageInternal(dbName: String) : IStorage {
         }
     }
 
-    override fun removeUtxoFromTransactionOutput(transaction: Transaction) {
-        transaction.outputs.forEachIndexed { i, output ->
-            removeUtxo(output.address, transaction.hash, i)
-        }
-    }
-
     override fun hasUtxo(utxo: TransactionInput): Boolean {
         return redisClient.normal.existsUtxo("${utxo.originalTxHash}:${utxo.originalOutputIndex}")
+    }
+
+    override fun hasAddress(address: String): Boolean {
+        return redisClient.normal.hasAddress(address)
     }
 
     override fun getUtxoByAddress(address: String): Set<TransactionInput> {

@@ -2,17 +2,25 @@ package blockchain.network
 
 import blockchain.data.core.Block
 import blockchain.data.core.Transaction
+import blockchain.data.core.Transaction.Signature
 import blockchain.network.client.HttpClient
 import java.lang.Exception
 import java.util.concurrent.ConcurrentHashMap
 
-class Broadcaster @JvmOverloads constructor(initialPeerMap: Map<String, String> = HashMap()) {
+class Broadcaster @JvmOverloads constructor(
+    localPeerMap: Map<String, String> = HashMap(),
+    globalPeerMap: Map<String, String> = HashMap()
+) {
 
     private val peerMap: ConcurrentHashMap<String, HttpClient> = ConcurrentHashMap()
+    private val globalPeerMap: HashMap<String, HttpClient> = HashMap()
 
     init {
-        for (key in initialPeerMap.keys) {
-            peerMap[key] = HttpClient(initialPeerMap[key]!!)
+        for (key in localPeerMap.keys) {
+            peerMap[key] = HttpClient(localPeerMap[key]!!)
+        }
+        for (key in globalPeerMap.keys) {
+            this.globalPeerMap[key] = HttpClient(globalPeerMap[key]!!)
         }
     }
 
@@ -70,33 +78,65 @@ class Broadcaster @JvmOverloads constructor(initialPeerMap: Map<String, String> 
             }
         }
     }
-    suspend fun globalNewBlock(block: Block) {
-        for (key in getKeySet()) {
-            peerMap[key]?.peerService?.globalNewBlock(block)
-        }
-    }
 
-    suspend fun globalNewTransaction(transaction: Transaction) {
-        for (key in getKeySet()) {
-            peerMap[key]?.peerService?.globalNewTransaction(transaction)
-        }
-    }
-
-
-    suspend fun globalGetUserLocation(address: String): String {
-        for (key in getKeySet()) {
-            val url = peerMap[key]?.peerService?.getUserLocation(address)
-            if (!url.isNullOrEmpty()) {
+    suspend fun getUserLocation(address: String): String {
+        for (client in globalPeerMap.values) {
+            val url = client.peerService.getUserLocation(address)
+            if (url.isNotEmpty()) {
                 return url
             }
         }
         return ""
     }
 
-    suspend fun globalMoveUser(address: String, localChainId: String, signatures: List<Transaction.Signature>): String {
-        for (key in getKeySet()) {
-            peerMap[key]?.peerService?.globalMoveUser(address, localChainId, signatures)
+    suspend fun moveUser(
+        address: String,
+        localChainId: String,
+        signatures: List<Signature>
+    ): List<Signature> {
+        val list = ArrayList<Signature>()
+        for (client in globalPeerMap.values) {
+            val list2 = client.peerService.moveUser(address, localChainId, signatures)
+            if (list.isNotEmpty()) {
+                list.addAll(list2)
+                break
+            }
+        }
+        return list
+    }
+
+    suspend fun globalNewBlock(block: Block) {
+        for (client in globalPeerMap.values) {
+            client.peerService.globalNewBlock(block)
+        }
+    }
+
+    suspend fun globalNewTransaction(transaction: Transaction) {
+        for (client in globalPeerMap.values) {
+            client.peerService.globalNewTransaction(transaction)
+        }
+    }
+
+
+    suspend fun globalGetUserLocation(address: String): String {
+        for (client in globalPeerMap.values) {
+            val url = client.peerService.globalGetUserLocation(address)
+            if (url.isNotEmpty()) {
+                return url
+            }
         }
         return ""
+    }
+
+    suspend fun globalMoveUser(address: String, localChainId: String, signatures: List<Transaction.Signature>): ArrayList<Signature> {
+        val list = ArrayList<Signature>()
+        for (client in globalPeerMap.values) {
+            val list2 = client.peerService.globalMoveUser(address, localChainId, signatures)
+            if (list.isNotEmpty()) {
+                list.addAll(list2)
+                break
+            }
+        }
+        return list
     }
 }

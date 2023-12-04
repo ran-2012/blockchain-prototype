@@ -12,13 +12,7 @@ import java.util.concurrent.atomic.AtomicLong;
 public class MiningService {
     private final Log log = Log.get(this);
 
-    public static MiningService instance = new MiningService();
-
-    public static MiningService getInstance() {
-        return instance;
-    }
-
-    private MiningService() {
+    public MiningService() {
     }
 
     Executor executor = Executors.newSingleThreadExecutor();

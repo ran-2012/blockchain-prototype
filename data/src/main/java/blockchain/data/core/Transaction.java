@@ -2,12 +2,11 @@ package blockchain.data.core;
 
 import blockchain.utility.Hash;
 import blockchain.utility.Json;
+import blockchain.utility.Rsa;
 import org.jetbrains.annotations.TestOnly;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
 public class Transaction {
@@ -17,7 +16,7 @@ public class Transaction {
     public List<TransactionInput> inputs = new ArrayList<>();
     public List<TransactionOutput> outputs = new ArrayList<>();
 
-    public List<Signature> signature = new ArrayList<>();
+    public List<Signature> signatures = new ArrayList<>();
     public long fee;
     public long timestamp;
 
@@ -74,6 +73,17 @@ public class Transaction {
         this.hash = hash;
         this.timestamp = System.currentTimeMillis();
         this.hash = updateHash();
+    }
+
+    public boolean verifyUser() {
+        for (Signature sig : signatures) {
+            if (sig.type.equals(SignatureType.USER)
+                    && Hash.hashString(sig.publicKey).equals(sourceAddress)
+                    && Rsa.verify(sig.data, sig.signature, sig.publicKey)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public String toString() {
